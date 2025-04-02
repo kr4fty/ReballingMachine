@@ -17,11 +17,12 @@
 #include "pulse_control.h"
 #include "thermocouples.h"
 
-uint32_t nextTime;
-
 #define WindowSize 200
 unsigned long windowStartTime;
-unsigned long startTime;
+unsigned long       startTime;
+unsigned long        nextTime;
+
+bool isPowerOn;
 
 double Setpoint1, Input1, Output1;
 double Setpoint2, Input2, Output2;
@@ -100,6 +101,9 @@ void setup() {
     Serial.printf("%.2f %.2f %.2f %.2f %.2f\n", rampt0t1, rampt1t2, rampt2t3, rampt3t4, rampt4t5);*/
 
     windowStartTime = millis();
+    isPowerOn = true;
+    printStartOrStop(isPowerOn);
+
     //DEBUG
     #ifdef DEBUG
     Serial.begin(9600);
@@ -128,6 +132,21 @@ void loop() {
 
         windowStartTime = millis() + WindowSize;
     }
+
+    /****************************** START/STOP *******************************/
+    if(isButtonClicked()) {
+        isPowerOn = not isPowerOn;
+
+        printStartOrStop(isPowerOn);
+
+        if(!isPowerOn) {
+            //noInterrupts();
+        }
+        else {
+            //interrupts();
+        }
+    }
+    /*************************************************************************/
 
     /********************************** PID **********************************/
     // Toma Input y actúa. Luego en la variable Output guarda lo calculado

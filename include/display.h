@@ -115,4 +115,20 @@ void printActualSetpoint(uint16_t value)
     lcd.printf("%3d", value);
     lcd.setTextSize(MIDLE_TEXT);
 }
+
+void printStartOrStop(bool state)
+{
+    lcd.setTextSize(MIDLE_TEXT);
+    lcd.setCursor(0*MIDLE_TEXT*6, 6*MIDLE_TEXT*8);
+    
+    if(state){ // RUN
+        lcd.print(F(" "));
+        lcd.print((char)175);   // '>>'
+    }
+    else{ //Pause
+        lcd.print((char)222);   // '|'
+        lcd.print((char)222);   // '|'
+    }
+    lcd.setTextSize(MIDLE_TEXT);
+}
 #endif
