@@ -1,0 +1,13 @@
+https://www.forosdeelectronica.com/threads/dise%C3%B1ando-una-estaci%C3%B3n-de-soldado-por-soplado-smd-y-o-reballing.101941/page-3#post-1159636
+
+1° Tiempo - precalentamiento 1°C * seg aprox desde la temp actual hasta 150°C
+2° Tiempo - activacion del FLUX 150°C hasta 180°C 0.5°C * seg (total 60 seg)
+3° Tiempo - retiro del chip 180°C hasta 250 °C 1.5°C * seg (MAX 45 seg)
+4° Tiempo - enfriamiento -1°C * seg
+
+Para integrados con plomo, temperatura de extracción: 183ºC, para integrados sin plomo, temperatura de extracción: 218ºC
+
+
+
+https://microensamble.com/perfil-de-temperatura-circuitos-impresos/
+https://www.instructables.com/Arduino-Rework-Station/

@@ -1,0 +1,109 @@
+#include <Arduino.h>
+#include "config.h"
+#include <PID_v1.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_ST7735.h>
+#include <SPI.h>
+#include <max6675.h>
+
+
+Adafruit_ST7735 lcd = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
+
+MAX6675 thermocouple(TH1_CS);
+
+double Setpoint, Input, Output;
+//double Kp=100, Ki=.5, Kd=50;
+
+#define WindowSize 190
+unsigned long windowStartTime;
+PID myPID = PID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
+ 
+// the setup function runs once when you press reset or power the board
+void setup() {
+
+  pinMode(BUTTON, INPUT_PULLUP);
+
+  // PWM
+  ledcAttachPin(RELAY_PIN, PWM1_Ch);
+  ledcSetup(PWM1_Ch, PWM1_Freq, PWM1_Res);
+  ledcWrite(PWM1_Ch, Resolution);
+
+  windowStartTime = millis();
+
+  Setpoint = 45;
+  //turn the PID on
+  myPID.SetSampleTime(25);
+  myPID.SetOutputLimits(0, Resolution);
+  myPID.SetMode(AUTOMATIC);
+  myPID.SetTunings(Kp, Ki, Kd);
+
+   // Use this initializer if using a 1.8" TFT screen:
+  lcd.initR(INITR_BLACKTAB);      // Init ST7735S chip, black tab
+  lcd.setTextColor(ST77XX_WHITE, ST77XX_BLACK); // Para sobreescribir puntos
+  lcd.fillScreen(ST77XX_BLACK);
+  lcd.setRotation(1);
+  lcd.setTextSize(MIDLE_TEXT);
+  lcd.setCursor(0, 0);
+  lcd.setTextColor(ST77XX_YELLOW, ST77XX_BLACK);
+  lcd.print("Press key");
+  lcd.setTextColor(ST77XX_WHITE, ST77XX_BLACK);
+
+  while(digitalRead(BUTTON));
+  while(!digitalRead(BUTTON));
+
+  delay(200);
+
+  while(digitalRead(BUTTON));
+  while(!digitalRead(BUTTON));
+
+  // DEBUG
+  #ifdef DEBUG
+  Serial.begin(9600);
+  #endif
+}
+
+// the loop function runs over and over again forever
+
+double oldInput=0;
+#ifdef ALPHA
+double InputFiltered;
+#endif
+void loop() {
+
+  #ifdef ALPHA
+  InputFiltered = thermocouple.readCelsius();
+  #endif
+
+  while(1){
+
+    myPID.Compute();
+
+    if (millis() > windowStartTime)
+    { //time to shift the Relay Window
+
+      Input = thermocouple.readCelsius();
+      #ifdef ALPHA
+      InputFiltered = (ALPHA*Input) + ((1-ALPHA)*InputFiltered);
+      Input = InputFiltered;
+      #endif
+
+      if(oldInput!=Input){
+        lcd.setCursor(0, 0);
+        lcd.printf("%3d",(uint16_t)Input);
+        lcd.printf(" - %3d", (uint16_t)(Resolution-Output));
+
+        oldInput = Input;
+
+        // DEBUG
+        #ifdef DEBUG
+        Serial.print(0);
+        Serial.print(" ");
+        Serial.println(Input);
+        #endif
+      }
+
+      windowStartTime = millis() + WindowSize;
+    }
+    ledcWrite(PWM1_Ch, (Resolution-Output));
+  }
+}

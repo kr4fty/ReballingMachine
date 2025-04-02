@@ -1,0 +1,49 @@
+v0.08c3
+________
+    Primera version con Actualizacion mediante OTA, utilizando la libreria
+    ElegantOTA, en modo Async
+    [platformio.ini]
+        build_flags =   
+                    ....
+                    -D ELEGANTOTA_USE_ASYNC_WEBSERVER=1
+        
+        lib_deps =
+                    ....
+                    esphome/AsyncTCP-esphome@^2.1.2
+	                esphome/ESPAsyncWebServer-esphome@^3.1.0
+v0.08d
+______
+    Se actualiza la libreria "ai-esp32-rotary-encoder", que corrige un error al
+    permitir seleccionar en el pin central del encoder (conectarlo a GND en
+    lugar de a 3.3V).
+    
+    Se utiliza la libreria ArduinoOTA para actualizaciones OTA. Ademas solo se
+    actulizara si arrancamos la placa con un BOTON presionado (a partir de la
+    v0.08.c11) que se eligira en su momento. Por ahora se usa el unico que esta
+    instalado.
+
+v0.08e
+______
+    Se comienza con el reordenamiento y separacion de las funciones para lograr
+    un mejor entendimiento a la hora de depurar el codigo.
+
+    * ota_upgrade.h: Para el manejo de las actualizaciones mediante OTA
+                     Terminos utilizados: metodos, ojetos, classes, pasaje de
+                     parametros por valor/referencia, funciones Lambda
+
+    * display.h: Encargado de refrescar los valores en el LCD display
+
+    * encoder.h: Lectura y escritura del encoder
+
+    * pulse_control.h: Seteo tanto del angulo de disparo como asi tambien, del
+      ancho del pulso. A su vez se encarga de la deteccion del Cruce por Cero
+    
+    * thermocouples.h: para las lecturas de las termocuplas
+
+v0.08f
+______
+
+
+v0.09
+_____
+    Primea version que implementa seguimiento de un perfil de temeperatura

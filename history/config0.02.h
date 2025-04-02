@@ -1,0 +1,135 @@
+/******************************** PINOUT **************************************
+*
+*                        ESP32 WROOM
+*                  ,----------------------,
+*                --| 3V3              GND |--          
+*                --| EN            GPIO23 |--  TFT_SDA
+*                --| GPIO36        GPIO22 |--  ZC_PIN
+*                --| GPIO39        GPIO01 |--
+*                --| GPIO34        GPIO03 |--
+*                --| GPIO35        GPIO21 |--  TH2_CS
+*        TFT_DC  --| GPIO32           GND |--
+*                --| GPIO33        GPIO19 |--  TH1_DO / TH2_DO
+* ENCODER_PIN_A  --| GPIO25        GPIO18 |--  TH1_CLK / TH2_CLK / TFT_SCL
+* ENCODER_PIN_B  --| GPIO26        GPIO05 |--  TFT_CS
+*                --| GPIO27        GPIO17 |--  RELAY_PIN
+*                --| GPIO14        GPIO16 |--  TH1_CS
+*                --| GPIO12        GPIO04 |--  BUTTON
+*                --| VBATT         GPIO00 |--
+*                --| GPIO13        GPIO02 |--
+*                --| GPIO09        GPIO15 |--  TFT_RST
+*                --| GPIO10        GPIO08 |--
+*                --| GPIO11,-----, GPIO07 |--
+*                --| 5V    | USB | GPIO06 |--
+*                  '______________________'
+*
+******************************************************************************/
+
+#ifndef CONFIG_H
+#define CONFIG_H
+
+// Boton **********************************************************************
+#define BUTTON       4
+
+// Encorder *******************************************************************
+#define ENCODER_PIN_A   25
+#define ENCODER_PIN_B   26
+#define ENCODER_VCC_PIN -1 // Uso VCC de la placa
+#define ENCODER_STEPS    4
+
+// TERMOCUPLA 1 ***************************************************************
+//TH1_DO        GPIO19
+#define TH1_CS      16
+//TH1_CLK       GPIO18
+
+// TERMOCUPLA 2 ***************************************************************
+//TH2_DO        GPIO19
+#define TH2_CS      21
+//TH2_CLK       GPIO18
+
+// LCD ************************************************************************
+//TFT_SCL       GPIO18
+//TFT_SDA       GPIO23
+#define TFT_CS       5
+#define TFT_RST     15
+#define TFT_DC      32
+
+// Depuración y  envió de datos por puerto Serial *****************************
+#define DEBUG        1
+
+// Salida de control del Calefactor *******************************************
+#define PWM1_Ch      0
+#define PWM1_Res     8
+#define Resolution 256  // 2^PWM1_Res - 1
+#define PWM1_Freq   55  // 50Hz*2*Muestras
+#define RELAY_PIN   17   // GPIO02
+
+// Constantes PID *************************************************************
+#define CONSTANTES
+#ifdef CONSTANTES
+//              Actual    Board     Heater      Heater Ring     pidtuner.com 
+#define Kp         0.5  //1.570     4.215       1.550           0.95
+#define Ki   0.0038989  //0.009636  0.03229     0.01418         0.0064518
+#define Kd      9.2996  //0         9.887       0               17.5494
+#endif
+// Pequeño OK       Kp= 0.5, Ki= 0.0038989, Kd= 9.2996
+// Grande OK        Kp= 0.95, Ki= 0.0064518, Kd= 17.5494
+
+// Filtro Digital para la entrada de Temperatura
+#define ALPHA    0.250
+
+// Formato del Texto **********************************************************
+#define LITTLE_TEXT  1
+#define MIDLE_TEXT   2
+#define BIG_TEXT     4
+#define GIGANT_TEXT  6
+
+// Cruce por Cero *************************************************************
+#define WINDOW_INTERRUPT    8 // mili seg, para omitir interrupciones por ruido
+#define G_PULSE_WIDTH      10 // micro seg. Ancho del pulso en G del triac
+#define ZC_PIN             22 // interrupción externa por el GPIO22
+#define WINDOW_1Seg      1000 // milli seconds, 1seg
+#define ZC_MAX_ANGLE      180
+#define t10mSEG         10000 // =1/100Hz, 2 cruces por cada periodo 2*50Hz
+#define ZC_PULSE_WIDTH   1000 // Ancho aproximado de cada pulso de ZC (600 con C=2.7nF)
+//#define ZC_INTERRUPT_FILTER // Para evitar falsas interrupciones en ZC_PIN
+
+#endif
+
+/* Curva perfil de temperatura *************************************************
+*
+* Temp^
+*     |
+*     |
+*TMax_|                                   __.`.__
+*     |                                 /         \
+*     |                                /           \
+*     |            ___________________/             \
+*     |           /                                  \
+*     |          /                                    \
+*     |         /                                      \ 
+*     |        /                                        \
+*Tamb_| ______/                                          \_____________
+*     |
+*     '------------------------------------------------------------------->
+*             |   |                   |  |   |    |      |                  Time
+*     0      t0  t1                  t2 t3  tmax  t4     t5
+*
+*
+*   Tiempo  Temperaturas    Duración                    Descripción
+*   ======  ============    ========                    ===========
+*   t0-t1   1ºC/seg.        Hasta los 150ºC             Pre calentamiento
+*   t1-t2   0.5ºC/seg.      hasta los 180º, 60 seg Max  Activación del FLUX
+*   t2-t3   180º a Tmax     45seg MAX                   Reflow / Extracción
+*   t4-t5   -1ºC/seg.       Tmax a Tamb                 Enfriamiento
+*
+*
+* Tmax va a variar de acuerdo a cada placa (disipador, espesor de placa, IC,
+* tipo de estaño, etc.). Por lo general integrados con plomo, hasta 183ºC. Para
+* ICs sin plomo, hasta unos 218-230ºC
+*
+*******************************************************************************/
+float perfil_temp[]={0  , 130  , 150 , 217 , 217, 0 };
+float perfil_time[]={0.0, 90.0, 90.0, 20, 20, 150.0};
+uint16_t t1, t2, t3, t4, t5;
+float rampt0t1, rampt1t2, rampt2t3, rampt3t4, rampt4t5;
