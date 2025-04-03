@@ -116,7 +116,7 @@ void printActualSetpoint(uint16_t value)
     lcd.setTextSize(MIDLE_TEXT);
 }
 
-void printStartOrStop(bool state)
+void printSystemStatus(bool state)
 {
     lcd.setTextSize(MIDLE_TEXT);
     lcd.setCursor(0*MIDLE_TEXT*6, 6*MIDLE_TEXT*8);
@@ -126,9 +126,26 @@ void printStartOrStop(bool state)
         lcd.print((char)175);   // '>>'
     }
     else{ //Pause
-        lcd.print((char)222);   // '|'
+        lcd.print((char)222);   // 'l'
         lcd.print((char)222);   // '|'
     }
     lcd.setTextSize(MIDLE_TEXT);
 }
+
+void printTicks(uint16_t value)
+{
+    lcd.setTextSize(LITTLE_TEXT);
+    lcd.setCursor(0*LITTLE_TEXT*6, 15*LITTLE_TEXT*8);
+    lcd.printf("%4d %c",value, digitalRead(RELAY_PIN)?'H':'L');
+    lcd.setTextSize(MIDLE_TEXT);
+}
+
+void printPulsesStatus(bool status)
+{
+    lcd.setTextSize(LITTLE_TEXT);
+    lcd.setCursor(0*LITTLE_TEXT*6, 15*LITTLE_TEXT*8);
+    lcd.printf("%s", status?" OK ":"Fail");
+    lcd.setTextSize(MIDLE_TEXT);
+}
+
 #endif

@@ -54,7 +54,7 @@ void setup() {
     encoder_init();
 
     /********************************* OTA ***********************************/
-    /* Se actulizará solo si el sistema arranca con el boton presionado      */
+    /* Se actualizará solo si el sistema arranca con el botón presionado      */
     #ifdef ARDUINO_OTA
     if(isButtonDown()){
         startOtaUpgrade();
@@ -102,7 +102,7 @@ void setup() {
 
     windowStartTime = millis();
     isPowerOn = true;
-    printStartOrStop(isPowerOn);
+    printSystemStatus(isPowerOn);
 
     //DEBUG
     #ifdef DEBUG
@@ -136,38 +136,46 @@ void loop() {
     /****************************** START/STOP *******************************/
     if(isButtonClicked()) {
         isPowerOn = not isPowerOn;
+        printTicks(Output1);
 
-        printStartOrStop(isPowerOn);
+        printSystemStatus(isPowerOn);
 
         if(!isPowerOn) {
-            //noInterrupts();
+            myPID.SetMode(MANUAL);
+            stopZcInterrupt(); // Desactivo interrupciones de cruce por cero
         }
         else {
-            //interrupts();
+            myPID.SetMode(AUTOMATIC);
+            startZcInterrupt(); // Activo interrupciones de cruce por cero
         }
     }
     /*************************************************************************/
 
+    if(isPowerOn){
     /********************************** PID **********************************/
-    // Toma Input y actúa. Luego en la variable Output guarda lo calculado
-    myPID.Compute();
+        // Toma Input y actúa. En la variable Output se guarda lo calculado
+        myPID.Compute();
 
     /*************************************************************************/
 
     /***************************** CONTROL DE FASE ***************************/
-    // Se envía pulso de habilitación del TRIAC
-    setPwmPulse(Output1);
+        // Se envía pulso de habilitación del TRIAC
+        setPwmPulse(Output1);
 
-    #ifdef ZC_INTERRUPT_FILTER
-    // Filtro para detectar falsos Cruces por Cero
-    if(millis()>zcNextTime && zcFlag){
-        zcFlag = false;
-        zcCounter++;
-    }
-    #endif
+        #ifdef ZC_INTERRUPT_FILTER
+        // Filtro para detectar falsos Cruces por Cero
+        if(millis()>zcNextTime && zcFlag){
+            zcFlag = false;
+            zcCounter++;
+        }
+        #endif
     /*************************************************************************/
+    }
 
     if(millis()>nextTime){  // Una vez por segundo
+        /****** SOLO PARA PRUEBAS!!!! ********/
+        startTime = millis();
+        /*************************************/
 
         // Perfil térmico *****************************************************
         tiempo =(uint16_t)((millis()-startTime)/1000);
@@ -228,6 +236,7 @@ void loop() {
                     break;
             case 5: // enfriamiento
                     Setpoint1 = perfil_temp[5];
+                    stopZcInterrupt();
                     break;
             default:
                     break;
@@ -244,6 +253,11 @@ void loop() {
         printOutputs(Output1, zcCounter);
 
         printActualSetpoint((uint16_t)perfil_temp[etapa]);
+
+        /******* CHEQUEO DE CORRESPONDENCIA PULSOS ENVIADOS/RECIBIDOS ********/
+        printPulsesStatus((abs(zcCounter-totalPulsesSent)<=2));
+        totalPulsesSent = 0;
+        /*********************************************************************/
 
         // DEBUG
         #ifdef DEBUG
