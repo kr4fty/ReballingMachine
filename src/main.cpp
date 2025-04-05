@@ -16,6 +16,7 @@
 #include "ota_upgrade.h"
 #include "pulse_control.h"
 #include "thermocouples.h"
+#include "my_profiles.h"
 
 #define WindowSize 200
 unsigned long windowStartTime;
@@ -35,6 +36,11 @@ uint8_t etapa=1;
  
 // the setup function runs once when you press reset or power the board
 void setup() {
+    //DEBUG
+    //#ifdef DEBUG
+    Serial.begin(115200);
+    //#endif
+
     pinMode(RELAY_PIN, OUTPUT);
     pinMode(BUTTON, INPUT_PULLUP);
     pinMode(ZC_PIN, INPUT);
@@ -78,14 +84,42 @@ void setup() {
 
     initPwmPulseSettings();
 
+    /*// Precalentamiento
+    startTime = millis();
+    windowStartTime = millis();
     nextTime=millis() + WINDOW_1Seg;
+    Setpoint1 = 50;
+    while(millis()<(startTime+20000)){
+        if (millis() > windowStartTime){
+            readThermocouples(&Input1, &Input2);
 
+            myPID.Compute();
+
+            setPwmPulse(Output1);
+
+            windowStartTime = millis() + WindowSize;
+        }
+        if(millis()>nextTime){
+            Serial.printf("$%.2f %.2f %.2f;",Input1, perfilRamp, Output1);
+            nextTime=millis() + WINDOW_1Seg;      
+        }
+    }*/
+
+    // INICIALIZO EL PERFIL A UTILIZAR
+    profile_initializeProfiles();
+
+    // Selecciono el Perfil a utilizar;
+    profileSelectedIndex = SN60PB40v2;
+
+
+    nextTime=millis() + WINDOW_1Seg;
     startTime = millis();
 
-    perfil_temp[0] = Input1;
-    perfil_time[0] = startTime/1000;
+    //perfil_temp[0] = Input1;
+    //perfil_time[0] = (uint16_t)((millis()-startTime)/1000);
+    profile_preCalculate(Input1, (uint16_t)((millis()-startTime)/1000));
 
-    t1=perfil_time[0]+perfil_time[1];  // 120
+    /*t1=perfil_time[0]+perfil_time[1];  // 120
     t2=t1+perfil_time[2];              // 120+60=180
     t3=t2+perfil_time[3];              // 120+60+15=195
     t4=t3+perfil_time[4];              // 120+60+15+15=210
@@ -95,40 +129,25 @@ void setup() {
     rampt1t2=((perfil_temp[2]-perfil_temp[1])/perfil_time[2]);
     rampt2t3=((perfil_temp[3]-perfil_temp[2])/perfil_time[3]);
     rampt3t4=((perfil_temp[4]-perfil_temp[3])/perfil_time[4]);
-    rampt4t5=((perfil_temp[5]-perfil_temp[4])/perfil_time[5]);
+    rampt4t5=((perfil_temp[5]-perfil_temp[4])/perfil_time[5]);*/
 
-    /*Serial.printf("%d %d %d %d %d\n",t1,t2,t3,t4,t5);
-    Serial.printf("%.2f %.2f %.2f %.2f %.2f\n", rampt0t1, rampt1t2, rampt2t3, rampt3t4, rampt4t5);*/
+    //Serial.printf("%d %d %d %d %d %d\n", (uint16_t)perfil_temp[0], (uint16_t)perfil_temp[1], (uint16_t)perfil_temp[2], (uint16_t)perfil_temp[3], (uint16_t)perfil_temp[4], (uint16_t)perfil_temp[5]);
+    //Serial.printf("%d %d %d %d %d %d\n", (uint16_t)perfil_time[0], (uint16_t)perfil_time[1], (uint16_t)perfil_time[2], (uint16_t)perfil_time[3], (uint16_t)perfil_time[4], (uint16_t)perfil_time[5]);
+    //Serial.printf("%d %d %d %d %d\n",t1,t2,t3,t4,t5);
+    //Serial.printf("%.2f %.2f %.2f %.2f %.2f\n\n", rampt0t1, rampt1t2, rampt2t3, rampt3t4, rampt4t5);
 
     windowStartTime = millis();
     isPowerOn = true;
     printSystemStatus(isPowerOn);
-
-    //DEBUG
-    #ifdef DEBUG
-    Serial.begin(9600);
-    startTime = windowStartTime;
-    #endif
 }
 
 // the loop function runs over and over again forever
 void loop() {
-  //Senso la temperatura cada 200mSeg (frecuencia máxima a la que lee el sensor max6675)
+    // Senso la temperatura cada 200mSeg 
+    // (frecuencia máxima a la que lee el sensor max6675)
     if (millis() > windowStartTime){
         readThermocouples(&Input1, &Input2);
-
-        // DEBUG
-        #ifdef DEBUG
-        //double Time = (millis()-startTime)/1000.0;
-        //Serial.print(Input1);
-        //Serial.print(" ");
-        //Serial.println(0);
-        #ifdef ALPHA
-        //Serial.printf("$%.2f %.2f %.2f;",Input1,InputFiltered1,Output1);
-        #else
-        //Serial.printf("$%.2f %.2f;",Input1,Output1);
-        #endif
-        #endif
+        //Serial.printf("$%.2f %.2f %.2f;",Input1, perfilRamp, Output1);
 
         windowStartTime = millis() + WindowSize;
     }
@@ -151,7 +170,7 @@ void loop() {
     }
     /*************************************************************************/
 
-    if(isPowerOn){
+    if(isPowerOn){ // En funcionamiento?
     /********************************** PID **********************************/
         // Toma Input y actúa. En la variable Output se guarda lo calculado
         myPID.Compute();
@@ -173,10 +192,6 @@ void loop() {
     }
 
     if(millis()>nextTime){  // Una vez por segundo
-        /****** SOLO PARA PRUEBAS!!!! ********/
-        startTime = millis();
-        /*************************************/
-
         // Perfil térmico *****************************************************
         tiempo =(uint16_t)((millis()-startTime)/1000);
         // Trazado del perfil ideal
@@ -192,55 +207,8 @@ void loop() {
             perfilRamp = rampt4t5*(tiempo-t4)+perfil_temp[4];
         else
             perfilRamp = 0;
-
-        switch (etapa)
-        {
-            case 1: // precalentamiento
-                    //myPID.SetTunings(0.5, 0.0038989, 9.2996);
-                    myPID.SetTunings(0.2950, 0.002774, 6.0934);
-                    //myPID.SetTunings(0.250, 0.001949, 4.19498);
-                    Setpoint1 = perfil_temp[1]+75;
-                    if(Input1>=(perfil_temp[1]-10)){
-                        time34Init = millis();
-                        etapa = 2;
-                    }
-                    break;
-            case 2: // activación de flux
-                    //myPID.SetTunings(1, 0.007798, 18.5991);
-                    //myPID.SetTunings(0.5, 0.0038989, 9.2996);
-                    //myPID.SetTunings(0.2950, 0.0023, 5.4877);
-                    myPID.SetTunings(0.250, 0.001949, 4.19498);
-                    Setpoint1 = perfil_temp[2]+30;
-                    if((Input1>=perfil_temp[2]) && (millis()>(time34Init+perfil_time[2]*1000))){
-                        time34Init = millis();
-                        etapa = 3;
-                    }
-                    break;
-            case 3: // reflow
-                    //myPID.SetTunings(1, 0.007798, 18.5991);
-                    //myPID.SetTunings(0.5, 0.0038989, 9.2996);
-                    myPID.SetTunings(0.2950, 0.0023, 5.4877);
-                    Setpoint1 = perfil_temp[3]+105;
-                    if((Input1>=(perfil_temp[3]-30)) && (millis()>(time34Init+perfil_time[3]*1000))){
-                        time34Init = millis();
-                        etapa = 4;
-                    }
-                    break;
-            case 4: // extracción
-                    //myPID.SetTunings(1, 0.007798, 18.5991);
-                    //myPID.SetTunings(0.5, 0.0038989, 9.2996);
-                    myPID.SetTunings(0.2950, 0.0023, 5.4877);
-                    Setpoint1 = perfil_temp[4];
-                    if(millis()>(time34Init+perfil_time[4]*1000))
-                        etapa = 5;
-                    break;
-            case 5: // enfriamiento
-                    Setpoint1 = perfil_temp[5];
-                    stopZcInterrupt();
-                    break;
-            default:
-                    break;
-        }
+        
+        Setpoint1 = perfilRamp;
         //*********************************************************************
 
         if(oldInput1!=Input1 || oldInput2!=Input2){
@@ -262,7 +230,7 @@ void loop() {
         // DEBUG
         #ifdef DEBUG
         //Time = (millis()-startTime)/1000.0;
-        Serial.printf("$%.2f %.2f %d %.2f;",Input1, Input2, etapa, perfilRamp);
+        //Serial.printf("$%.2f %.2f %d %.2f;",Input1, Input2, etapa, perfilRamp);
         #endif
 
         zcCounter=0;

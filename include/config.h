@@ -56,7 +56,7 @@
 #define TFT_DC      32
 
 // Depuración y  envió de datos por puerto Serial *****************************
-//#define DEBUG        1
+#define DEBUG        1
 
 // Salida de control del Calefactor *******************************************
 #define RELAY_PIN   17   // GPIO17
@@ -65,7 +65,7 @@
 #define CONSTANTES
 #ifdef CONSTANTES
 //              Actual    Board     Heater      Heater Ring     pidtuner.com 
-#define Kp         0.5  //1.570     4.215       1.550           0.95
+#define Kp         2.0  //1.570     4.215       1.550           0.95
 #define Ki   0.0038989  //0.009636  0.03229     0.01418         0.0064518
 #define Kd      9.2996  //0         9.887       0               17.5494
 #endif

@@ -108,16 +108,27 @@ Calentadores
 TIMER y PWM:
 ============
     Problema:
-        Se habia implementado mediante el Timer1 y Timer2 una reimplementacion
-        de un PWM, pero adaptado para nuestro uso. Su funcion era la siguiente:
+        Se había implementado mediante el Timer1 y Timer2 una reimplementacion
+        de un PWM, pero adaptado para nuestro uso. Su función era la siguiente:
           Espero por la llega de un cruce por cero y de acuerdo con el dutty
-          seleccionado, envio un pulso (HIGH), esto medido con el timer1. Luego
+          seleccionado, envió un pulso (HIGH), esto medido con el timer1. Luego
           al activarse el timer2 bajo el pin a LOW.
           En resumen: al momento de la llegada del cruce por cero, se espera un
-          tiempo, duty, y se envia un pulso, de 15uS, para activar el TRIAC.
-        Esto se habia implementado con la API v2 del Timer, pero ahora se
-        actualizo a la v3. Se reacomodo de acuerdo a los cambios de la nueva v3
+          tiempo, duty, y se envía un pulso, de 15uS, para activar el TRIAC.
+        Esto se había implementado con la API v2 del Timer, pero ahora se
+        actualizo a la v3. Se re acomodo de acuerdo a los cambios de la nueva v3
         pero aun no se probo en placa.
+
+PERFILES DE TEMPERATURA
+=======================
+    Se Intentara leer archivos de configuración, por ejemplo en formato JSON,
+    que contenga el perfil a utilizar. De este modo se buscara tener varios de
+    estos perfiles para ser seleccionados en el momento de arranque.
+    
+    Ejemplo de archivos:
+     https://github.com/dukeduck1984/uReflowOven-Esp32-Micropython/tree/master/MAIN/profiles
+
+    
 
 ///////////////////////////////////////////////////////////////////////////////
 HACER
@@ -165,7 +176,7 @@ HACER
       temperatura de los calentadores
     
     * Tratar de utilizar PWM en modo 2 (asi se llama en STM32, cuando el pulso)
-      recien pasa a nivel alto, cuando se desborda el contador. A la inversa 
+      recién pasa a nivel alto, cuando se desborda el contador. A la inversa 
       que el PWM tradicional. AVERIGUAR ESTO!!!
 
 ///////////////////////////////////////////////////////////////////////////////

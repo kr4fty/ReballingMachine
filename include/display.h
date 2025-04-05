@@ -27,7 +27,7 @@ void initDisplay()
 {
     lcd.initR(INITR_BLACKTAB);      // Init ST7735S chip, black tab // Para sobre escribir puntos
     lcd.cp437(true);
-    lcd.setRotation(1);
+    lcd.setRotation(3);
     lcd.setTextColor(ST77XX_WHITE, ST77XX_BLACK);
     lcd.fillScreen(ST77XX_BLACK);
     lcd.setTextSize(MIDLE_TEXT);
