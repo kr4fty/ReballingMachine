@@ -3,9 +3,9 @@
 *     Reballing Machine
 *
 *     Autor: Tapia Velasquez Favio
-*     Version: 0.09b
-*                   Primer intento de seguimiento de un Perfil de Temperatura
-*
+*     Version: 0.09.3
+*                   Posibilidad de seleccionar entre varios Perfiles guardados
+*                   Se dibuja el perfil seleccionado
 *
 ******************************************************************************/
 
@@ -104,14 +104,9 @@ void setup() {
     // Inicializo los Timers que realizaran el pulso que activa el Triac 
     initPwmPulseSettings();
 
-    // Selecciono el Perfil a utilizar;
-    //profileSelectedIndex = SN63PB37;
-
-
+    // Realizo cálculos iniciales de acuerdo al Perfil seleccionado
     nextTime=millis() + WINDOW_1Seg;
     startTime = millis();
-
-    // Realizo cálculos iniciales de acuerdo al Perfil seleccionado
     profile_preCalculate(Input1, (uint16_t)((millis()-startTime)/1000));
 
     /*Serial.println("\tTime\tTemp\tSlope");
