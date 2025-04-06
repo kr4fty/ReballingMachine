@@ -116,10 +116,10 @@ void profile_initializeProfiles()
 
 }
 
-void profile_preCalculate(float initialTemp, uint16_t initialTime)
+void profile_selectProfile(uint8_t profileSelected)
 {
     // Marco el Perfil seleccionado como activo
-    ReflowHeatingProfileController_selectProfile(&reflowHeatingProfileController, profileSelectedIndex);
+    ReflowHeatingProfileController_selectProfile(&reflowHeatingProfileController, profileSelected);
 
     //Guardo los valores del perfil seleccionado
     //Serial.print("Selected profile: ");
@@ -135,7 +135,10 @@ void profile_preCalculate(float initialTemp, uint16_t initialTime)
         Serial.print(" Temperature: ");
         Serial.println(myProfile.temperature[i]);*/
     }
+}
 
+void profile_preCalculate(float initialTemp, uint16_t initialTime)
+{
     // Cargo los tiempo inicial en el que arranco el sistema
     myProfile.temperature[0] = initialTemp;
     myProfile.time[0] = initialTime;

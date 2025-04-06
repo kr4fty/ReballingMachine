@@ -95,8 +95,8 @@ void setup() {
             oldEncoderValue = encoderValue;
         }
     }while(!isButtonClicked());
-    profileSelectedIndex = encoderValue;
-    printSelectedProfile(profileNames[profileSelectedIndex]);
+    profile_selectProfile(encoderValue);
+    printSelectedProfile(profileNames[encoderValue], myProfile.time, myProfile.temperature, myProfile.length);
     /*************************************************************************/
 
     printLavels();
