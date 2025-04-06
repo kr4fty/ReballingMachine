@@ -99,10 +99,11 @@ void setup() {
         }
     }while(!isButtonClicked());// Si hubo pulsación de tecla entonces tomo la posición actual como el seleccionado
     profile_selectProfile(encoderValue);
-    printSelectedProfile(myProfile.name, myProfile.time, myProfile.temperature, myProfile.length);
+    //printSelectedProfile(myProfile.name, myProfile.time, myProfile.temperature, myProfile.length);
     /*************************************************************************/
 
-    printLavels();
+    //printLavels();
+    printFrameBase(myProfile.time, myProfile.temperature, myProfile.length);
 
     // Inicializo los Timers que realizaran el pulso que activa el Triac 
     initPwmPulseSettings();
@@ -136,7 +137,7 @@ void loop() {
     /****************************** START/STOP *******************************/
     if(isButtonClicked()) {
         isPowerOn = not isPowerOn;
-        printTicks(Output1);
+        //printTicks(Output1);
 
         printSystemStatus(isPowerOn);
 
@@ -192,18 +193,21 @@ void loop() {
         //*********************************************************************
 
         if(oldInput1!=Input1 || oldInput2!=Input2){
-            printInputs(Input1, Input2);
+            //printInputs(Input1, Input2);
+            printTemperatures(Input1, Input2);
 
             oldInput1 = Input1;
             oldInput2 = Input2;
         }
 
-        printOutputs(Output1, zcCounter);
+        //printOutputs(Output1, zcCounter);
 
-        printActualSetpoint((uint16_t)etapa);
+        //printActualSetpoint((uint16_t)etapa);
+        printZcCount(zcCounter);
+        printPoint(tiempo, Input1);
 
         /******* CHEQUEO DE CORRESPONDENCIA PULSOS ENVIADOS/RECIBIDOS ********/
-        printPulsesStatus((abs(zcCounter-totalPulsesSent)<=2));
+        //printPulsesStatus((abs(zcCounter-totalPulsesSent)<=2));
         totalPulsesSent = 0;
         /*********************************************************************/
 

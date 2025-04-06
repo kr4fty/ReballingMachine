@@ -21,6 +21,10 @@
 #include <Adafruit_ST7735.h>
 #include "config.h"
 
+// Al usarlo rotado los valores estan dado vuelta
+#define LCD_HEIGHT ST7735_TFTWIDTH_128 // 128
+#define LCD_WIDTH ST7735_TFTHEIGHT_160 // 160
+
 Adafruit_ST7735 lcd = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 
 void initDisplay()
@@ -84,6 +88,49 @@ void printLavels()
     lcd.setTextColor(ST7735_WHITE, ST7735_BLACK);
 }
 
+// Frame principal una vez arrancado el Perfil seleccionado
+void printFrameBase(uint16_t *posX, uint16_t *posY, uint8_t length)
+{
+    uint16_t posx[20], posy[20];
+    lcd.fillScreen(ST7735_BLACK);
+    lcd.setTextSize(MIDLE_TEXT);
+    lcd.setTextColor(ST7735_YELLOW, ST7735_BLACK);
+    lcd.setCursor(0*6*MIDLE_TEXT, 0*8*MIDLE_TEXT);
+    lcd.print("Heater  Board");
+    lcd.setCursor(0*6*MIDLE_TEXT, 2*8*MIDLE_TEXT);
+    lcd.print("Status Pulsos");
+
+    // Dibujo los ejes
+    uint8_t originX = 5;
+    uint8_t originY = LCD_HEIGHT-5;
+    lcd.drawLine(originX, LCD_HEIGHT/2, originX, originY, ST7735_YELLOW); // eje Vertical
+    lcd.drawLine(originX, originY, LCD_WIDTH-5, originY, ST7735_YELLOW); // eje Horizontal
+    // escalamos
+    uint8_t scaleX = 3;
+    uint8_t scaleY = 4;
+    for(uint8_t i=0; i<length; i++){
+        posy[i] = originY - posY[i]/scaleY;
+        posx[i] = originX + posX[i]/scaleX;
+    }
+    // Dibujo el Perfil
+    for(uint8_t i=1; i<length; i++){
+        lcd.drawLine(posx[i-1],posy[i-1], posx[i], posy[i], ST7735_WHITE);
+    }
+}
+void printPoint(uint8_t posx, uint8_t posy)
+{
+    uint8_t originX = 5;
+    uint8_t originY = LCD_HEIGHT-5;
+    // escalamos
+    uint8_t scaleX = 3;
+    uint8_t scaleY = 4;
+    posy = originY - posy/scaleY;
+    posx = originX + posx/scaleX;
+
+    // Dibujamos el punto
+    lcd.drawPixel(posx, posy, ST7735_RED);
+}
+
 void printProfiles(char profiles[][50], uint8_t profileLength)
 {
     //Serial.printf("Perfiles: %d", profileLength);
@@ -117,6 +164,7 @@ void printProfileSelection(uint8_t posY)
 
 void printSelectedProfile(const char *name, uint16_t *posX, uint16_t *posY, uint8_t length)
 {
+    uint16_t posx[20], posy[20];
     lcd.fillScreen(ST7735_BLACK);
     lcd.setTextSize(MIDLE_TEXT);
     lcd.setTextColor(ST7735_WHITE, ST7735_BLACK);
@@ -129,12 +177,12 @@ void printSelectedProfile(const char *name, uint16_t *posX, uint16_t *posY, uint
     // escala 1/3
     uint8_t scale = 3;
     for(uint8_t i=0; i<length; i++){
-        posY[i] = 109 - posY[i]/scale;
-        posX[i] = 5 + posX[i]/scale;
+        posy[i] = 109 - posY[i]/scale;
+        posx[i] = 5 + posX[i]/scale;
     }
     // Dibujo el Perfil
     for(uint8_t i=1; i<length; i++){
-        lcd.drawLine(posX[i-1],posY[i-1], posX[i], posY[i], ST7735_WHITE);
+        lcd.drawLine(posx[i-1],posy[i-1], posx[i], posy[i], ST7735_WHITE);
     }
     
     delay(10000);
@@ -156,6 +204,14 @@ void printInputs(double input1, double input2)
     lcd.setCursor(0*6*MIDLE_TEXT, 3*8*MIDLE_TEXT);
     lcd.printf("%3d",(uint16_t)input2);
 }
+void printTemperatures(double input1, double input2)
+{
+    lcd.setTextColor(ST7735_WHITE, ST7735_BLACK);
+    lcd.setCursor(0*6*MIDLE_TEXT, 1*8*MIDLE_TEXT);
+    lcd.printf("%3d",(uint16_t)input1);
+    lcd.setCursor(8*6*MIDLE_TEXT, 1*8*MIDLE_TEXT);
+    lcd.printf("%3d",(uint16_t)input2);
+}
 void printOutputs(double output1, double output2)
 {
     lcd.setTextColor(ST7735_WHITE, ST7735_BLACK);
@@ -163,6 +219,12 @@ void printOutputs(double output1, double output2)
     lcd.printf("%4d",(uint16_t)output1);
     lcd.setCursor(10*6*MIDLE_TEXT, 3*8*MIDLE_TEXT);
     lcd.printf("%3d",(uint16_t)output2);
+}
+void printZcCount(uint8_t zcCount)
+{
+    lcd.setTextColor(ST7735_WHITE, ST7735_BLACK);
+    lcd.setCursor(9*6*MIDLE_TEXT, 3*8*MIDLE_TEXT);
+    lcd.printf("%4d",(uint16_t)zcCount);
 }
 
 void printActualSetpoint(uint16_t value)
@@ -175,8 +237,9 @@ void printActualSetpoint(uint16_t value)
 
 void printSystemStatus(bool state)
 {
+    lcd.setTextColor(ST7735_WHITE, ST7735_BLACK);
     lcd.setTextSize(MIDLE_TEXT);
-    lcd.setCursor(0*MIDLE_TEXT*6, 6*MIDLE_TEXT*8);
+    lcd.setCursor(3*MIDLE_TEXT*6, 3*MIDLE_TEXT*8);
     
     if(state){ // RUN
         lcd.print(F(" "));
@@ -186,7 +249,6 @@ void printSystemStatus(bool state)
         lcd.print((char)222);   // 'l'
         lcd.print((char)222);   // '|'
     }
-    lcd.setTextSize(MIDLE_TEXT);
 }
 
 void printTicks(uint16_t value)
