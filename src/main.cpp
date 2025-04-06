@@ -24,6 +24,8 @@ unsigned long       startTime;
 unsigned long        nextTime;
 
 bool isPowerOn;
+unsigned long encoderValue;
+unsigned long oldEncoderValue;
 
 double Setpoint1, Input1, Output1;
 double Setpoint2, Input2, Output2;
@@ -67,8 +69,15 @@ void setup() {
     #endif
     /****************************** END OTA **********************************/
 
-    printPresentation();
+    //printPresentation();
 
+    /************************ SELECCIÓN DEL PERFIL A UTILIZAR ****************/
+    // Busco los Perfiles disponibles e inicializo
+    profile_initializeProfiles();
+    printProfiles(profileNames, profileCount);
+    encoder_setBasicParameters(0,profileCount-1, true, 0, 10);
+    encoderValue = oldEncoderValue = myEnc.readEncoder();
+    printProfileSelection(encoderValue+1);
     windowStartTime = millis();
     // Espero por pulsación de tecla para comenzar
     do{ 
@@ -77,18 +86,26 @@ void setup() {
 
             windowStartTime = millis() + WindowSize;
         }
+        // Encoder
+        if(myEnc.encoderRotationDetected()){
+            // borro el anterior
+            clearProfileSelection(oldEncoderValue+1);
+            encoderValue = myEnc.readEncoder();
+            printProfileSelection(encoderValue+1);
+            oldEncoderValue = encoderValue;
+        }
     }while(!isButtonClicked());
+    profileSelectedIndex = encoderValue;
+    printSelectedProfile(profileNames[profileSelectedIndex]);
+    /*************************************************************************/
 
     printLavels();
 
     // Inicializo los Timers que realizaran el pulso que activa el Triac 
     initPwmPulseSettings();
 
-    // Busco los Perfiles disponibles e inicializo
-    profile_initializeProfiles();
-
     // Selecciono el Perfil a utilizar;
-    profileSelectedIndex = SN63PB37;
+    //profileSelectedIndex = SN63PB37;
 
 
     nextTime=millis() + WINDOW_1Seg;
@@ -113,7 +130,7 @@ void loop() {
     // (frecuencia máxima a la que lee el sensor max6675)
     if (millis() > windowStartTime){
         readThermocouples(&Input1, &Input2);
-        Serial.printf("$%.2f %.2f %.2f;",Input1, perfilRamp, Output1);
+        //Serial.printf("$%.2f %.2f %.2f;",Input1, perfilRamp, Output1);
 
         windowStartTime = millis() + WindowSize;
     }

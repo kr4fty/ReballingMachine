@@ -96,10 +96,6 @@ void profile_initializeProfiles()
     ReflowHeatingProfileController_addProfile(&reflowHeatingProfileController, "sn42bi576ag04", sn42bi576ag04);
     ReflowHeatingProfileController_addProfile(&reflowHeatingProfileController, "sn965ag30cu05", sn965ag30cu05);
 
-}
-
-void profile_preCalculate(float initialTemp, uint16_t initialTime)
-{
     // Obtengo el numero de perfiles Guardados
     profileCount = ReflowHeatingProfileController_getProfileCount(&reflowHeatingProfileController);
     /*Serial.print("Number of profiles loaded: ");
@@ -118,6 +114,10 @@ void profile_preCalculate(float initialTemp, uint16_t initialTime)
         Serial.println(profileNames[i]);
     }*/
 
+}
+
+void profile_preCalculate(float initialTemp, uint16_t initialTime)
+{
     // Marco el Perfil seleccionado como activo
     ReflowHeatingProfileController_selectProfile(&reflowHeatingProfileController, profileSelectedIndex);
 

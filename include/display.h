@@ -6,8 +6,8 @@
  *  también de mostrar parámetros (Temperaturas, Angulo de disparo, detección
  *  de cruces por cero, etc.)
  * 
- * 
- * 
+ *  ST7735
+ *          128x160
  * 
  * 
  * 
@@ -83,6 +83,51 @@ void printLavels()
     lcd.print("Setpoint ");
     lcd.setTextColor(ST7735_WHITE, ST7735_BLACK);
 }
+
+void printProfiles(char profiles[][50], uint8_t profileLength)
+{
+    //Serial.printf("Perfiles: %d", profileLength);
+    lcd.fillScreen(ST7735_BLACK);
+    lcd.setTextSize(MIDLE_TEXT);
+    lcd.setTextColor(ST7735_YELLOW, ST7735_BLACK);
+    lcd.setCursor(3*6*MIDLE_TEXT, 0*8*MIDLE_TEXT);
+    lcd.printf("PERFILES");
+    lcd.setTextColor(ST7735_WHITE, ST7735_BLACK);
+    lcd.setTextSize(LITTLE_TEXT);
+    for(uint8_t i=1; i<=profileLength; i++){
+        lcd.setCursor(3*6*LITTLE_TEXT, (1+2*i)*8*LITTLE_TEXT);
+        lcd.printf("%s", profiles[i-1]);
+        //Serial.println("Imprimo perfil");
+    }
+
+    lcd.setTextColor(ST7735_YELLOW, ST7735_BLACK);
+}
+
+void clearProfileSelection(uint8_t posY)
+{
+    lcd.setCursor(1*6*LITTLE_TEXT, (1+2*posY)*8*LITTLE_TEXT);
+    lcd.print(" ");
+}
+
+void printProfileSelection(uint8_t posY)
+{
+    lcd.setCursor(1*6*LITTLE_TEXT, (1+2*posY)*8*LITTLE_TEXT);
+    lcd.print(">");
+}
+
+void printSelectedProfile(char *name)
+{
+    lcd.fillScreen(ST7735_BLACK);
+    lcd.setTextSize(MIDLE_TEXT);
+    lcd.setTextColor(ST7735_YELLOW, ST7735_BLACK);
+    lcd.setCursor(1*6*MIDLE_TEXT, 0*8*MIDLE_TEXT);
+    lcd.print("SELECCIONADO");
+    lcd.setCursor(0*6*MIDLE_TEXT, 2*8*MIDLE_TEXT);
+    lcd.setTextColor(ST7735_WHITE, ST7735_BLACK);
+    lcd.print(name);
+    delay(5000);
+}
+
 void printEncoderValue(long value)
 {
     lcd.setTextSize(BIG_TEXT);
