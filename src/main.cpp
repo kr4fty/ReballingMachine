@@ -31,7 +31,6 @@ PID myPID = PID(&Input1, &Output1, &Setpoint1, Kp, Ki, Kd, DIRECT);
 
 float perfilRamp;
 uint16_t tiempo;
-uint64_t time34Init;
 uint8_t etapa=1;
  
 // the setup function runs once when you press reset or power the board
@@ -89,7 +88,7 @@ void setup() {
     profile_initializeProfiles();
 
     // Selecciono el Perfil a utilizar;
-    profileSelectedIndex = SN60PB40v2;
+    profileSelectedIndex = SN63PB37;
 
 
     nextTime=millis() + WINDOW_1Seg;
@@ -163,35 +162,16 @@ void loop() {
         tiempo =(uint16_t)((millis()-startTime)/1000);
 
         // Trazado del perfil ideal
-        if     (tiempo <myProfile.time[1]){
-            perfilRamp = tempSlope[0]*(tiempo-myProfile.time[0]) + myProfile.temperature[0];
-            etapa = 1;
-        }
-        else if(tiempo < myProfile.time[2]){
-            perfilRamp = tempSlope[1]*(tiempo-myProfile.time[1]) + myProfile.temperature[1];
-            etapa = 2;
-        }
-        else if(tiempo < myProfile.time[3]){
-            perfilRamp = tempSlope[2]*(tiempo-myProfile.time[2]) + myProfile.temperature[2];
-            etapa = 3;
-        }
-        else if(tiempo < myProfile.time[4]){
-            perfilRamp = tempSlope[3]*(tiempo-myProfile.time[3]) + myProfile.temperature[3];
-            etapa = 4;
-        }
-        else if(tiempo < myProfile.time[5]){
-            perfilRamp = tempSlope[4]*(tiempo-myProfile.time[4]) + myProfile.temperature[4];
-            etapa = 5;
-        }
-        else if(tiempo < myProfile.time[6]){
-            perfilRamp = tempSlope[5]*(tiempo-myProfile.time[5]) + myProfile.temperature[5];
-            etapa = 6;
+        if(tiempo < myProfile.time[etapa] && etapa < myProfile.length){
+            perfilRamp = tempSlope[etapa-1]*(tiempo-myProfile.time[etapa-1]) + myProfile.temperature[etapa-1];
+            //Serial.printf("%d - %d\n", (tiempo+1), myProfile.time[etapa]);
+            if((tiempo+1)==myProfile.time[etapa]){
+                etapa++;
+            }
         }
         else{
-            // Sigo usando la ultima pendiente
             perfilRamp = 0;
         }
-        
         Setpoint1 = perfilRamp;
         //*********************************************************************
 
@@ -204,7 +184,7 @@ void loop() {
 
         printOutputs(Output1, zcCounter);
 
-        printActualSetpoint((uint16_t)myProfile.temperature[etapa]);
+        printActualSetpoint((uint16_t)etapa);
 
         /******* CHEQUEO DE CORRESPONDENCIA PULSOS ENVIADOS/RECIBIDOS ********/
         printPulsesStatus((abs(zcCounter-totalPulsesSent)<=2));
