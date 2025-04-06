@@ -82,30 +82,10 @@ void setup() {
 
     printLavels();
 
+    // Inicializo los Timers que realizaran el pulso que activa el Triac 
     initPwmPulseSettings();
 
-    /*// Precalentamiento
-    startTime = millis();
-    windowStartTime = millis();
-    nextTime=millis() + WINDOW_1Seg;
-    Setpoint1 = 50;
-    while(millis()<(startTime+20000)){
-        if (millis() > windowStartTime){
-            readThermocouples(&Input1, &Input2);
-
-            myPID.Compute();
-
-            setPwmPulse(Output1);
-
-            windowStartTime = millis() + WindowSize;
-        }
-        if(millis()>nextTime){
-            Serial.printf("$%.2f %.2f %.2f;",Input1, perfilRamp, Output1);
-            nextTime=millis() + WINDOW_1Seg;      
-        }
-    }*/
-
-    // INICIALIZO EL PERFIL A UTILIZAR
+    // Busco los Perfiles disponibles e inicializo
     profile_initializeProfiles();
 
     // Selecciono el Perfil a utilizar;
@@ -115,26 +95,13 @@ void setup() {
     nextTime=millis() + WINDOW_1Seg;
     startTime = millis();
 
-    //perfil_temp[0] = Input1;
-    //perfil_time[0] = (uint16_t)((millis()-startTime)/1000);
+    // Realizo cálculos iniciales de acuerdo al Perfil seleccionado
     profile_preCalculate(Input1, (uint16_t)((millis()-startTime)/1000));
 
-    /*t1=perfil_time[0]+perfil_time[1];  // 120
-    t2=t1+perfil_time[2];              // 120+60=180
-    t3=t2+perfil_time[3];              // 120+60+15=195
-    t4=t3+perfil_time[4];              // 120+60+15+15=210
-    t5=t4+perfil_time[5];              // 120+60+15+15+150=360
-
-    rampt0t1=((perfil_temp[1]-perfil_temp[0])/perfil_time[1]);
-    rampt1t2=((perfil_temp[2]-perfil_temp[1])/perfil_time[2]);
-    rampt2t3=((perfil_temp[3]-perfil_temp[2])/perfil_time[3]);
-    rampt3t4=((perfil_temp[4]-perfil_temp[3])/perfil_time[4]);
-    rampt4t5=((perfil_temp[5]-perfil_temp[4])/perfil_time[5]);*/
-
-    //Serial.printf("%d %d %d %d %d %d\n", (uint16_t)perfil_temp[0], (uint16_t)perfil_temp[1], (uint16_t)perfil_temp[2], (uint16_t)perfil_temp[3], (uint16_t)perfil_temp[4], (uint16_t)perfil_temp[5]);
-    //Serial.printf("%d %d %d %d %d %d\n", (uint16_t)perfil_time[0], (uint16_t)perfil_time[1], (uint16_t)perfil_time[2], (uint16_t)perfil_time[3], (uint16_t)perfil_time[4], (uint16_t)perfil_time[5]);
-    //Serial.printf("%d %d %d %d %d\n",t1,t2,t3,t4,t5);
-    //Serial.printf("%.2f %.2f %.2f %.2f %.2f\n\n", rampt0t1, rampt1t2, rampt2t3, rampt3t4, rampt4t5);
+    /*Serial.println("\tTime\tTemp\tSlope");
+    for(uint8_t i=0; i<myProfile.length; i++){
+        Serial.printf("%d-\t%d\t%d\t%.2f\n", i, myProfile.time[i], myProfile.temperature[i], tempSlope[i]);
+    }*/
 
     windowStartTime = millis();
     isPowerOn = true;
@@ -147,7 +114,7 @@ void loop() {
     // (frecuencia máxima a la que lee el sensor max6675)
     if (millis() > windowStartTime){
         readThermocouples(&Input1, &Input2);
-        //Serial.printf("$%.2f %.2f %.2f;",Input1, perfilRamp, Output1);
+        Serial.printf("$%.2f %.2f %.2f;",Input1, perfilRamp, Output1);
 
         windowStartTime = millis() + WindowSize;
     }
@@ -194,19 +161,36 @@ void loop() {
     if(millis()>nextTime){  // Una vez por segundo
         // Perfil térmico *****************************************************
         tiempo =(uint16_t)((millis()-startTime)/1000);
+
         // Trazado del perfil ideal
-        if     (tiempo < t1)
-            perfilRamp = rampt0t1*(tiempo-perfil_time[0])+perfil_temp[0];
-        else if(tiempo < t2)
-            perfilRamp = rampt1t2*(tiempo-t1)+perfil_temp[1];
-        else if(tiempo < t3)
-            perfilRamp = rampt2t3*(tiempo-t2)+perfil_temp[2];
-        else if(tiempo < t4)
-            perfilRamp = rampt3t4*(tiempo-t3)+perfil_temp[3];
-        else if(tiempo < t5)
-            perfilRamp = rampt4t5*(tiempo-t4)+perfil_temp[4];
-        else
+        if     (tiempo <myProfile.time[1]){
+            perfilRamp = tempSlope[0]*(tiempo-myProfile.time[0]) + myProfile.temperature[0];
+            etapa = 1;
+        }
+        else if(tiempo < myProfile.time[2]){
+            perfilRamp = tempSlope[1]*(tiempo-myProfile.time[1]) + myProfile.temperature[1];
+            etapa = 2;
+        }
+        else if(tiempo < myProfile.time[3]){
+            perfilRamp = tempSlope[2]*(tiempo-myProfile.time[2]) + myProfile.temperature[2];
+            etapa = 3;
+        }
+        else if(tiempo < myProfile.time[4]){
+            perfilRamp = tempSlope[3]*(tiempo-myProfile.time[3]) + myProfile.temperature[3];
+            etapa = 4;
+        }
+        else if(tiempo < myProfile.time[5]){
+            perfilRamp = tempSlope[4]*(tiempo-myProfile.time[4]) + myProfile.temperature[4];
+            etapa = 5;
+        }
+        else if(tiempo < myProfile.time[6]){
+            perfilRamp = tempSlope[5]*(tiempo-myProfile.time[5]) + myProfile.temperature[5];
+            etapa = 6;
+        }
+        else{
+            // Sigo usando la ultima pendiente
             perfilRamp = 0;
+        }
         
         Setpoint1 = perfilRamp;
         //*********************************************************************
@@ -220,7 +204,7 @@ void loop() {
 
         printOutputs(Output1, zcCounter);
 
-        printActualSetpoint((uint16_t)perfil_temp[etapa]);
+        printActualSetpoint((uint16_t)myProfile.temperature[etapa]);
 
         /******* CHEQUEO DE CORRESPONDENCIA PULSOS ENVIADOS/RECIBIDOS ********/
         printPulsesStatus((abs(zcCounter-totalPulsesSent)<=2));

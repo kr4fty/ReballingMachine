@@ -34,7 +34,7 @@
 #define SN42BI576AG04   3
 #define SN965AG30CU05   4
 
-float temperatureSlope[20]; // Pendiente de temperatura
+float tempSlope[20]; // Pendiente de temperatura
 #define MAX_PROFILES 10 // Máximo número de perfiles
 char profileNames[MAX_PROFILES][50]; // Array para almacenar los nombres de los perfiles
 uint8_t profileCount; //Numero de perfiles
@@ -52,7 +52,7 @@ ReflowHeatingProfileController reflowHeatingProfileController;
 void profile_initializeProfiles()
 {
     for(uint8_t i=0; i<20; i++){
-        temperatureSlope[0] = 0;
+        tempSlope[0] = 0;
     }
     // Inicializar el controlador
     ReflowHeatingProfileController_init(&reflowHeatingProfileController);
@@ -101,8 +101,8 @@ void profile_preCalculate(float initialTemp, uint16_t initialTime)
 {
     // Obtengo el numero de perfiles Guardados
     profileCount = ReflowHeatingProfileController_getProfileCount(&reflowHeatingProfileController);
-    Serial.print("Number of profiles loaded: ");
-    Serial.println(profileCount);
+    /*Serial.print("Number of profiles loaded: ");
+    Serial.println(profileCount);*/
 
     // Guardar los nombres de los perfiles en el array
     for (uint8_t i = 0; i < profileCount ; i++) {
@@ -111,38 +111,37 @@ void profile_preCalculate(float initialTemp, uint16_t initialTime)
         profileNames[i][sizeof(profileNames[i]) - 1] = '\0'; // Asegurar que la cadena esté terminada
     }
     // Listar los nombres de los perfiles
-    Serial.println("Profile names:");
+    /*Serial.println("Profile names:");
     for (int i = 0; i < profileCount; i++) {
         Serial.printf("%2d: ", i);
         Serial.println(profileNames[i]);
-    }
+    }*/
 
     // Marco el Perfil seleccionado como activo
     ReflowHeatingProfileController_selectProfile(&reflowHeatingProfileController, profileSelectedIndex);
 
     //Guardo los valores del perfil seleccionado
-    Serial.print("Selected profile: ");
+    //Serial.print("Selected profile: ");
     myProfile.name = ReflowHeatingProfileController_getSelectedProfileName(&reflowHeatingProfileController);
-    Serial.println(myProfile.name);
-    Serial.println("Profile content:");
+    //Serial.println(myProfile.name);
+    //Serial.println("Profile content:");
     myProfile.length = ReflowHeatingProfileController_getProfileLength(&reflowHeatingProfileController);
     for (uint8_t i = 0; i < myProfile.length; i++) {
         myProfile.time[i] = ReflowHeatingProfileController_getTime(&reflowHeatingProfileController, i);
         myProfile.temperature[i] = ReflowHeatingProfileController_getTemperatureForIndex(&reflowHeatingProfileController, i);
-        Serial.print("Time: ");
+        /*Serial.print("Time: ");
         Serial.print(myProfile.time[i]);
         Serial.print(" Temperature: ");
-        Serial.println(myProfile.temperature[i]);
+        Serial.println(myProfile.temperature[i]);*/
     }
 
-    myProfile.temperature[0] = initialTemp;
-
     // Cargo los tiempo inicial en el que arranco el sistema
+    myProfile.temperature[0] = initialTemp;
     myProfile.time[0] = initialTime;
 
     // Calculo las pendientes
     for(uint8_t i=0; i<myProfile.length-1; i++){
-        temperatureSlope[i] = (myProfile.temperature[i+1]-myProfile.temperature[i])/(myProfile.time[i+1]-myProfile.time[i]);
+        tempSlope[i] = (float)(myProfile.temperature[i+1]-myProfile.temperature[i])/(myProfile.time[i+1]-myProfile.time[i]);
     }
 }
  

@@ -134,10 +134,10 @@
 * ICs sin plomo, hasta unos 218-230ºC
 *
 *******************************************************************************/
-float perfil_temp[]={0  , 130  , 150 , 217 , 217, 0 };
-float perfil_time[]={0.0, 90.0, 90.0, 20, 20, 150.0};
-uint16_t t1, t2, t3, t4, t5;
-float rampt0t1, rampt1t2, rampt2t3, rampt3t4, rampt4t5;
+//float perfil_temp[]={0  , 130  , 150 , 217 , 217, 0 };
+//float perfil_time[]={0.0, 90.0, 90.0, 20, 20, 150.0};
+//uint16_t t1, t2, t3, t4, t5;
+//float rampt0t1, rampt1t2, rampt2t3, rampt3t4, rampt4t5;
 
 
 #endif
