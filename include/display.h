@@ -115,19 +115,22 @@ void printProfileSelection(uint8_t posY)
     lcd.print((char)175); // '>>'
 }
 
-void printSelectedProfile(char *name, uint16_t *posX, uint16_t *posY, uint8_t length)
+void printSelectedProfile(const char *name, uint16_t *posX, uint16_t *posY, uint8_t length)
 {
     lcd.fillScreen(ST7735_BLACK);
     lcd.setTextSize(MIDLE_TEXT);
     lcd.setTextColor(ST7735_WHITE, ST7735_BLACK);
     lcd.setCursor(2*6*MIDLE_TEXT, 0*8*MIDLE_TEXT);
     lcd.print(name);
+
     // Dibujo los ejes
     lcd.drawFastVLine(5,  10, 109, ST7735_YELLOW);
     lcd.drawFastHLine(5, 120, 150, ST7735_YELLOW);
+    // escala 1/3
+    uint8_t scale = 3;
     for(uint8_t i=0; i<length; i++){
-        posY[i] = 109 - posY[i]/3;
-        posX[i] = 5 + posX[i]/3;
+        posY[i] = 109 - posY[i]/scale;
+        posX[i] = 5 + posX[i]/scale;
     }
     // Dibujo el Perfil
     for(uint8_t i=1; i<length; i++){

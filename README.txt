@@ -127,6 +127,9 @@ PERFILES DE TEMPERATURA
     
     Ejemplo de archivos:
      https://github.com/dukeduck1984/uReflowOven-Esp32-Micropython/tree/master/MAIN/profiles
+    
+    Solución implementada:
+        Por ahora se guardan Perfiles en my_profiles.h y se cargan desde ahi
 
     
 
