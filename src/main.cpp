@@ -166,6 +166,7 @@ void loop() {
             perfilRamp = tempSlope[etapa-1]*(tiempo-myProfile.time[etapa-1]) + myProfile.temperature[etapa-1];
             //Serial.printf("%d - %d\n", (tiempo+1), myProfile.time[etapa]);
             if((tiempo+1)==myProfile.time[etapa]){
+                // Paso a la siguiente etapa
                 etapa++;
             }
         }
