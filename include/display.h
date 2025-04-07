@@ -137,7 +137,7 @@ void printFrameBase(uint16_t *posX, uint16_t *posY, uint8_t length)
 }
 void printPoint(uint16_t posx, uint16_t posy)
 {
-    // escalamos
+    // Escalamos y trasladamos los puntos
     posy = ORIGINY - posy/YSCALE;
     posx = ORIGINX + posx/XSCALE;
 

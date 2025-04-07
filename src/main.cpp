@@ -186,7 +186,7 @@ void loop() {
             }
 
             // Voy gráficando la evolución de la temperatura con el tiempo
-            printPoint(tiempo, Input1);
+            printPoint(tiempo, (uint16_t)Input1);
         }
         else{
             perfilRamp = 0;
