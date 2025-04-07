@@ -60,12 +60,18 @@ void profile_initializeProfiles()
 
     // Definir los perfiles de calentamiento
     ReflowProfile sn60pb40v1 = {
+        {0, 90, 180, 200, 220, 370},
+        {30, 130, 150, 217, 217, 0},
+        6
+    };
+
+    ReflowProfile sn60pb40v2 = {
         {0, 90, 180, 210, 240, 270, 330},
         {30, 140, 165, 190, 210, 190, 50},
         7
     };
 
-    ReflowProfile sn60pb40v2 = {
+    ReflowProfile sn60pb40v3 = {
         {0, 90, 180, 210, 240, 270, 330},
         {30, 120, 150, 180, 220, 120, 50},
         7
@@ -92,6 +98,7 @@ void profile_initializeProfiles()
 
     ReflowHeatingProfileController_addProfile(&reflowHeatingProfileController, "sn60pb40v1", sn60pb40v1);
     ReflowHeatingProfileController_addProfile(&reflowHeatingProfileController, "sn60pb40v2", sn60pb40v2);
+    ReflowHeatingProfileController_addProfile(&reflowHeatingProfileController, "sn60pb40v3", sn60pb40v3);
     ReflowHeatingProfileController_addProfile(&reflowHeatingProfileController, "sn63pb37", sn63pb37);
     ReflowHeatingProfileController_addProfile(&reflowHeatingProfileController, "sn42bi576ag04", sn42bi576ag04);
     ReflowHeatingProfileController_addProfile(&reflowHeatingProfileController, "sn965ag30cu05", sn965ag30cu05);

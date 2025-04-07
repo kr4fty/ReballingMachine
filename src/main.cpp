@@ -137,7 +137,6 @@ void loop() {
     /****************************** START/STOP *******************************/
     if(isButtonClicked()) {
         isPowerOn = not isPowerOn;
-        //printTicks(Output1);
 
         printSystemStatus(isPowerOn);
 
@@ -185,6 +184,9 @@ void loop() {
                 // Paso a la siguiente etapa
                 etapa++;
             }
+
+            // Voy gráficando la evolución de la temperatura con el tiempo
+            printPoint(tiempo, Input1);
         }
         else{
             perfilRamp = 0;
@@ -201,10 +203,8 @@ void loop() {
         }
 
         //printOutputs(Output1, zcCounter);
-
         //printActualSetpoint((uint16_t)etapa);
         printZcCount(zcCounter);
-        printPoint(tiempo, Input1);
 
         /******* CHEQUEO DE CORRESPONDENCIA PULSOS ENVIADOS/RECIBIDOS ********/
         //printPulsesStatus((abs(zcCounter-totalPulsesSent)<=2));

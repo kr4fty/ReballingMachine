@@ -24,6 +24,10 @@
 // Al usarlo rotado los valores estan dado vuelta
 #define LCD_HEIGHT ST7735_TFTWIDTH_128 // 128
 #define LCD_WIDTH ST7735_TFTHEIGHT_160 // 160
+#define XSCALE                       3 // Para reescalar en el eje X
+#define YSCALE                       4 // Para reescalar en el eje Y
+#define ORIGINX                     10 // Punto de origen de X, del grafico, en el LCD
+#define ORIGINY           LCD_HEIGHT-4 // Punto de origen de Y, del grafico, en el LCD
 
 Adafruit_ST7735 lcd = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 
@@ -100,35 +104,45 @@ void printFrameBase(uint16_t *posX, uint16_t *posY, uint8_t length)
     lcd.setCursor(0*6*MIDLE_TEXT, 2*8*MIDLE_TEXT);
     lcd.print("Status Pulsos");
 
+    // Cuadriculado
+    /*for(uint8_t i=ORIGINX; i<(LCD_WIDTH); i+=(60/XSCALE)){
+        lcd.drawLine(i, LCD_HEIGHT/2+2, i, ORIGINY+2, ST7735_CYAN); // Lineas verticales
+    }
+    for(uint8_t i=ORIGINY; i>=(LCD_HEIGHT/2); i-=(100/(2*YSCALE))){
+        lcd.drawLine(ORIGINX-2, i, LCD_WIDTH-10, i, ST7735_CYAN); // Lineas horizontales
+    }*/
+    for(uint8_t x=ORIGINX; x<(LCD_WIDTH); x+=(60/XSCALE)){
+        for(uint8_t y=LCD_HEIGHT/2+2; y<=ORIGINY+2; y+=3){
+            lcd.drawPixel(x, y, ST7735_CYAN); // Lineas punteadas verticales
+        }
+    }
+    for(uint8_t x=ORIGINX-2; x<LCD_WIDTH-10; x+=3){
+        for(uint8_t y=ORIGINY; y>=(LCD_HEIGHT/2); y-=(100/(2*YSCALE))){
+            lcd.drawPixel(x, y, ST7735_CYAN); // Lineas punteadas horizontales
+        }
+    }
     // Dibujo los ejes
-    uint8_t originX = 5;
-    uint8_t originY = LCD_HEIGHT-5;
-    lcd.drawLine(originX, LCD_HEIGHT/2, originX, originY, ST7735_YELLOW); // eje Vertical
-    lcd.drawLine(originX, originY, LCD_WIDTH-5, originY, ST7735_YELLOW); // eje Horizontal
-    // escalamos
-    uint8_t scaleX = 3;
-    uint8_t scaleY = 4;
+    lcd.drawLine(ORIGINX, LCD_HEIGHT/2-5, ORIGINX, ORIGINY, ST7735_BLUE); // eje Vertical
+    lcd.drawLine(ORIGINX, ORIGINY, LCD_WIDTH-5, ORIGINY, ST7735_BLUE); // eje Horizontal
+
+    // Escalamos el Perfil a utilizar
     for(uint8_t i=0; i<length; i++){
-        posy[i] = originY - posY[i]/scaleY;
-        posx[i] = originX + posX[i]/scaleX;
+        posy[i] = ORIGINY - posY[i]/YSCALE;
+        posx[i] = ORIGINX + posX[i]/XSCALE;
     }
     // Dibujo el Perfil
     for(uint8_t i=1; i<length; i++){
         lcd.drawLine(posx[i-1],posy[i-1], posx[i], posy[i], ST7735_WHITE);
     }
 }
-void printPoint(uint8_t posx, uint8_t posy)
+void printPoint(uint16_t posx, uint16_t posy)
 {
-    uint8_t originX = 5;
-    uint8_t originY = LCD_HEIGHT-5;
     // escalamos
-    uint8_t scaleX = 3;
-    uint8_t scaleY = 4;
-    posy = originY - posy/scaleY;
-    posx = originX + posx/scaleX;
+    posy = ORIGINY - posy/YSCALE;
+    posx = ORIGINX + posx/XSCALE;
 
     // Dibujamos el punto
-    lcd.drawPixel(posx, posy, ST7735_RED);
+    lcd.drawPixel(posx, posy, ST7735_YELLOW);
 }
 
 void printProfiles(char profiles[][50], uint8_t profileLength)
@@ -174,11 +188,10 @@ void printSelectedProfile(const char *name, uint16_t *posX, uint16_t *posY, uint
     // Dibujo los ejes
     lcd.drawFastVLine(5,  10, 109, ST7735_YELLOW);
     lcd.drawFastHLine(5, 120, 150, ST7735_YELLOW);
-    // escala 1/3
-    uint8_t scale = 3;
+    // Escalar el Perfil
     for(uint8_t i=0; i<length; i++){
-        posy[i] = 109 - posY[i]/scale;
-        posx[i] = 5 + posX[i]/scale;
+        posy[i] = 109 - posY[i]/YSCALE;
+        posx[i] = 5 + posX[i]/XSCALE;
     }
     // Dibujo el Perfil
     for(uint8_t i=1; i<length; i++){
