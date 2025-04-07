@@ -1,27 +1,60 @@
-/*
- * Tiempo[s]		sn60pb40v1		sn63pb37		sn42bi576ag04	sn965ag30cu05	Sn60Pb40v2
- * -------------------------------------------------------------------------------------------
- *     0				30				30				30				30				30
- *    20								90												
- *    30								100												
- *    40								110												
- *    90				140								90				150				120
- *    110								140												
- *    120								150												
- *    130								160												
- *    150								183												
- *    180				165								130				175				150
- *    200								230												
- *    210				190				235				138				217				180
- *    220								230												
- *    240				210				183				165				249				220
- *    270				190								138				217				220
- *    330				50												50				50
- *    340								50												
- *    360																				
- *    390												50								
- *
- */
+/** Curva perfil de temperatura ***********************************************
+
+ Temp^
+     |
+     |
+TMax_|                                   __.`.__
+     |                                 /         \
+     |                                /           \
+     |            ___________________/             \
+     |           /                                  \
+     |          /                                    \
+     |         /                                      \ 
+     |        /                                        \
+Tamb_| ______/                                          \_____________
+     |
+     '------------------------------------------------------------------->
+             |   |                   |  |   |    |      |                  Time
+     0      t0  t1                  t2 t3  tmax  t4     t5
+
+
+   Tiempo  Temperaturas    Duración                    Descripción
+   ======  ============    ========                    ===========
+   t0-t1   1ºC/seg.        Hasta los 150ºC             Pre calentamiento
+   t1-t2   0.5ºC/seg.      hasta los 180º, 60 seg Max  Activación del FLUX
+   t2-t3   180º a Tmax     45seg MAX                   Reflow / Extracción
+   t4-t5   -1ºC/seg.       Tmax a Tamb                 Enfriamiento
+
+
+ Tmax va a variar de acuerdo a cada placa (disipador, espesor de placa, IC,
+ tipo de estaño, etc.). Por lo general integrados con plomo, hasta 183ºC. Para
+ ICs sin plomo, hasta unos 218-230ºC
+
+
+ 
+  Tiempo[s]	sn60pb40v2	sn63pb37	sn42bi576ag04	sn965ag30cu05	Sn60Pb40v3
+  ----------------------------------------------------------------------------
+        0		 30			 30			 30				 30				 30
+       20					 90											
+       30					100											
+       40					110											
+       90		140						 90				150				120
+      110					140											
+      120					150											
+      130					160											
+      150					183											
+      180		165						130				175				150
+      200					230											
+      210		190			235			138				217				180
+      220					230											
+      240		210			183			165				249				220
+      270		190						138				217				220
+      330		 50										 50				 50
+      340					 50											
+      360																
+      390								 50								
+  
+ *****************************************************************************/
 
 
 #ifndef MY_PROFILES_H
@@ -31,9 +64,10 @@
 
 #define SN60PB40v1      0
 #define SN60PB40v2      1
-#define SN63PB37        2
-#define SN42BI576AG04   3
-#define SN965AG30CU05   4
+#define SN60PB40v3      2
+#define SN63PB37        3
+#define SN42BI576AG04   4
+#define SN965AG30CU05   5
 
 float tempSlope[20]; // Pendiente de temperatura
 #define MAX_PROFILES 10 // Máximo número de perfiles

@@ -26,7 +26,7 @@
 #define LCD_WIDTH ST7735_TFTHEIGHT_160 // 160
 #define XSCALE                       3 // Para reescalar en el eje X
 #define YSCALE                       4 // Para reescalar en el eje Y
-#define ORIGINX                     10 // Punto de origen de X, del grafico, en el LCD
+#define ORIGINX                     18 // Punto de origen de X, del grafico, en el LCD
 #define ORIGINY           LCD_HEIGHT-4 // Punto de origen de Y, del grafico, en el LCD
 
 Adafruit_ST7735 lcd = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
@@ -111,7 +111,7 @@ void printFrameBase(uint16_t *posX, uint16_t *posY, uint8_t length)
     for(uint8_t i=ORIGINY; i>=(LCD_HEIGHT/2); i-=(100/(2*YSCALE))){
         lcd.drawLine(ORIGINX-2, i, LCD_WIDTH-10, i, ST7735_CYAN); // Lineas horizontales
     }*/
-    for(uint8_t x=ORIGINX; x<(LCD_WIDTH); x+=(60/XSCALE)){
+    for(uint8_t x=ORIGINX; x<(LCD_WIDTH-2); x+=(60/XSCALE)){
         for(uint8_t y=LCD_HEIGHT/2+2; y<=ORIGINY+2; y+=3){
             lcd.drawPixel(x, y, ST7735_CYAN); // Lineas punteadas verticales
         }
@@ -121,9 +121,28 @@ void printFrameBase(uint16_t *posX, uint16_t *posY, uint8_t length)
             lcd.drawPixel(x, y, ST7735_CYAN); // Lineas punteadas horizontales
         }
     }
+    // Imprimo escala
+    lcd.setTextSize(LITTLE_TEXT);
+    lcd.setTextColor(ST7735_YELLOW);
+    lcd.setCursor(0, LCD_HEIGHT-8*LITTLE_TEXT);
+    lcd.print("  0");
+    lcd.setCursor(0, ORIGINY-2*(100/(2*YSCALE))-(LITTLE_TEXT*8/2));
+    lcd.print("100");
+    lcd.setCursor(0, ORIGINY-4*(100/(2*YSCALE))-(LITTLE_TEXT*8/2));
+    lcd.print("200");
+    lcd.setCursor(1*6*LITTLE_TEXT, (LCD_HEIGHT/2)-(LITTLE_TEXT*8));
+    lcd.print((char)248); // 'º'
+    lcd.print("C");
+
+
     // Dibujo los ejes
-    lcd.drawLine(ORIGINX, LCD_HEIGHT/2-5, ORIGINX, ORIGINY, ST7735_BLUE); // eje Vertical
-    lcd.drawLine(ORIGINX, ORIGINY, LCD_WIDTH-5, ORIGINY, ST7735_BLUE); // eje Horizontal
+    lcd.drawLine(ORIGINX, LCD_HEIGHT/2-5, ORIGINX, ORIGINY, ST7735_WHITE); // eje Vertical
+    lcd.drawLine(ORIGINX, ORIGINY, LCD_WIDTH-5, ORIGINY, ST7735_WHITE); // eje Horizontal
+    // DIbujo las flechas
+    lcd.drawLine(ORIGINX, LCD_HEIGHT/2-5, ORIGINX-2,  LCD_HEIGHT/2-5+5, ST7735_WHITE);
+    lcd.drawLine(ORIGINX, LCD_HEIGHT/2-5, ORIGINX+2,  LCD_HEIGHT/2-5+5, ST7735_WHITE);
+    lcd.drawLine(LCD_WIDTH-5, ORIGINY, LCD_WIDTH-5-5, ORIGINY-2, ST7735_WHITE);
+    lcd.drawLine(LCD_WIDTH-5, ORIGINY, LCD_WIDTH-5-5, ORIGINY+2, ST7735_WHITE);
 
     // Escalamos el Perfil a utilizar
     for(uint8_t i=0; i<length; i++){
@@ -185,13 +204,30 @@ void printSelectedProfile(const char *name, uint16_t *posX, uint16_t *posY, uint
     lcd.setCursor(2*6*MIDLE_TEXT, 0*8*MIDLE_TEXT);
     lcd.print(name);
 
+    // Cuadriculado
+    for(uint8_t x=ORIGINX; x<(LCD_WIDTH); x+=(60/XSCALE)){
+        for(uint8_t y=MIDLE_TEXT*8; y<=ORIGINY+2; y+=3){
+            lcd.drawPixel(x, y, ST7735_CYAN); // Lineas punteadas verticales
+        }
+    }
+    for(uint8_t x=ORIGINX-2; x<LCD_WIDTH-10; x+=3){
+        for(uint8_t y=ORIGINY; y>=MIDLE_TEXT*8; y-=(100/(2*XSCALE))){
+            lcd.drawPixel(x, y, ST7735_CYAN); // Lineas punteadas horizontales
+        }
+    }
     // Dibujo los ejes
-    lcd.drawFastVLine(5,  10, 109, ST7735_YELLOW);
-    lcd.drawFastHLine(5, 120, 150, ST7735_YELLOW);
-    // Escalar el Perfil
+    lcd.drawLine(ORIGINX, MIDLE_TEXT*8, ORIGINX, ORIGINY, ST7735_BLUE); // eje Vertical
+    lcd.drawLine(ORIGINX, ORIGINY, LCD_WIDTH-5, ORIGINY, ST7735_BLUE); // eje Horizontal
+    // DIbujo las flechas
+    lcd.drawLine(ORIGINX, MIDLE_TEXT*8, ORIGINX-2, MIDLE_TEXT*8+5, ST7735_BLUE);
+    lcd.drawLine(ORIGINX, MIDLE_TEXT*8, ORIGINX+2, MIDLE_TEXT*8+5, ST7735_BLUE);
+    lcd.drawLine(LCD_WIDTH-5, ORIGINY, LCD_WIDTH-5-5, ORIGINY-2, ST7735_BLUE);
+    lcd.drawLine(LCD_WIDTH-5, ORIGINY, LCD_WIDTH-5-5, ORIGINY+2, ST7735_BLUE);
+
+    // Escalamos el Perfil a utilizar
     for(uint8_t i=0; i<length; i++){
-        posy[i] = 109 - posY[i]/YSCALE;
-        posx[i] = 5 + posX[i]/XSCALE;
+        posy[i] = ORIGINY - posY[i]/XSCALE;
+        posx[i] = ORIGINX + posX[i]/XSCALE;
     }
     // Dibujo el Perfil
     for(uint8_t i=1; i<length; i++){

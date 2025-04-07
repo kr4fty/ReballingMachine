@@ -101,43 +101,4 @@
                             // build_flags =
 	                        //              -D ARDUINO_OTA
 
-/* Curva perfil de temperatura ************************************************
-*
-* Temp^
-*     |
-*     |
-*TMax_|                                   __.`.__
-*     |                                 /         \
-*     |                                /           \
-*     |            ___________________/             \
-*     |           /                                  \
-*     |          /                                    \
-*     |         /                                      \ 
-*     |        /                                        \
-*Tamb_| ______/                                          \_____________
-*     |
-*     '------------------------------------------------------------------->
-*             |   |                   |  |   |    |      |                  Time
-*     0      t0  t1                  t2 t3  tmax  t4     t5
-*
-*
-*   Tiempo  Temperaturas    Duración                    Descripción
-*   ======  ============    ========                    ===========
-*   t0-t1   1ºC/seg.        Hasta los 150ºC             Pre calentamiento
-*   t1-t2   0.5ºC/seg.      hasta los 180º, 60 seg Max  Activación del FLUX
-*   t2-t3   180º a Tmax     45seg MAX                   Reflow / Extracción
-*   t4-t5   -1ºC/seg.       Tmax a Tamb                 Enfriamiento
-*
-*
-* Tmax va a variar de acuerdo a cada placa (disipador, espesor de placa, IC,
-* tipo de estaño, etc.). Por lo general integrados con plomo, hasta 183ºC. Para
-* ICs sin plomo, hasta unos 218-230ºC
-*
-*******************************************************************************/
-//float perfil_temp[]={0  , 130  , 150 , 217 , 217, 0 };
-//float perfil_time[]={0.0, 90.0, 90.0, 20, 20, 150.0};
-//uint16_t t1, t2, t3, t4, t5;
-//float rampt0t1, rampt1t2, rampt2t3, rampt3t4, rampt4t5;
-
-
 #endif
