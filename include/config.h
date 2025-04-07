@@ -34,9 +34,6 @@
 // Encorder *******************************************************************
 #define ENCODER_PIN_A                 25
 #define ENCODER_PIN_B                 26
-#define ENCODER_VCC_PIN               -1 // Uso VCC de la placa
-#define ENCODER_STEPS                  4
-#define ENCODER_CENTRAL_PIN_TO_VCC false // se usa pin central conectado a GND
 
 // TERMOCUPLA 1 ***************************************************************
 //TH1_DO        GPIO19

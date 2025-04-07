@@ -41,20 +41,6 @@ void initDisplay()
     lcd.setTextSize(MIDLE_TEXT);
 }
 
-/*void printDisplay(class Adafruit_ST7735 &lcd,
-                  uint8_t text_size,
-                  uint8_t x_pos,
-                  uint8_t y_pos,
-                  int color_front,
-                  int color_back,
-                  char *text){
-    
-    lcd.setTextSize(text_size);
-    lcd.setCursor(x_pos*6*text_size, y_pos*8*text_size);
-    lcd.setTextColor(color_front, color_back);
-    lcd.print(text);
-}*/
-
 void printPresentation()
 {
     lcd.fillScreen(ST7735_BLACK);
@@ -105,12 +91,6 @@ void printFrameBase(uint16_t *posX, uint16_t *posY, uint8_t length)
     lcd.print("Status Pulsos");
 
     // Cuadriculado
-    /*for(uint8_t i=ORIGINX; i<(LCD_WIDTH); i+=(60/XSCALE)){
-        lcd.drawLine(i, LCD_HEIGHT/2+2, i, ORIGINY+2, ST7735_CYAN); // Lineas verticales
-    }
-    for(uint8_t i=ORIGINY; i>=(LCD_HEIGHT/2); i-=(100/(2*YSCALE))){
-        lcd.drawLine(ORIGINX-2, i, LCD_WIDTH-10, i, ST7735_CYAN); // Lineas horizontales
-    }*/
     for(uint8_t x=ORIGINX; x<(LCD_WIDTH-2); x+=(60/XSCALE)){
         for(uint8_t y=LCD_HEIGHT/2+2; y<=ORIGINY+2; y+=3){
             lcd.drawPixel(x, y, ST7735_CYAN); // Lineas punteadas verticales
@@ -123,17 +103,17 @@ void printFrameBase(uint16_t *posX, uint16_t *posY, uint8_t length)
     }
     // Imprimo escala
     lcd.setTextSize(LITTLE_TEXT);
-    lcd.setTextColor(ST7735_YELLOW);
+    lcd.setTextColor(ST7735_WHITE);
     lcd.setCursor(0, LCD_HEIGHT-8*LITTLE_TEXT);
     lcd.print("  0");
     lcd.setCursor(0, ORIGINY-2*(100/(2*YSCALE))-(LITTLE_TEXT*8/2));
     lcd.print("100");
     lcd.setCursor(0, ORIGINY-4*(100/(2*YSCALE))-(LITTLE_TEXT*8/2));
     lcd.print("200");
-    lcd.setCursor(1*6*LITTLE_TEXT, (LCD_HEIGHT/2)-(LITTLE_TEXT*8));
+    lcd.setCursor(0*6*LITTLE_TEXT, (LCD_HEIGHT/2)-(LITTLE_TEXT*8));
+    lcd.setTextColor(ST7735_YELLOW);
     lcd.print((char)248); // 'º'
     lcd.print("C");
-
 
     // Dibujo los ejes
     lcd.drawLine(ORIGINX, LCD_HEIGHT/2-5, ORIGINX, ORIGINY, ST7735_WHITE); // eje Vertical
@@ -185,14 +165,15 @@ void printProfiles(char profiles[][50], uint8_t profileLength)
 
 void clearProfileSelection(uint8_t posY)
 {
-    lcd.setCursor(1*6*LITTLE_TEXT, (1+2*posY)*8*LITTLE_TEXT);
-    lcd.print(" ");
+    lcd.setCursor(1*6*LITTLE_TEXT, (1*8*MIDLE_TEXT)+((1+2*posY)*8*LITTLE_TEXT)); //(1+2*posY)*8*LITTLE_TEXT)
+    lcd.print("  ");
 }
 
 void printProfileSelection(uint8_t posY)
 {
-    lcd.setCursor(1*6*LITTLE_TEXT, (1+2*posY)*8*LITTLE_TEXT);
-    lcd.print((char)175); // '>>'
+    lcd.setCursor(1*6*LITTLE_TEXT, (1*8*MIDLE_TEXT)+((1+2*posY)*8*LITTLE_TEXT)); //(1+2*posY)*8*LITTLE_TEXT)
+    lcd.print((char)45); // '-'
+    lcd.print((char)175); // '»'
 }
 
 void printSelectedProfile(const char *name, uint16_t *posX, uint16_t *posY, uint8_t length)

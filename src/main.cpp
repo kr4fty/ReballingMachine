@@ -77,13 +77,13 @@ void setup() {
     // Imprimo menu mostrando los posible Perfiles a seleccionar
     printProfiles(profileNames, profileCount);
     // Configuro el encoder de acuerdo a los Perfiles disponibles
-    encoder_setBasicParameters(0,profileCount-1, true, 0, 10);
+    encoder_setBasicParameters(0,profileCount-1, true, -1, 10);
     encoderValue = oldEncoderValue = myEnc.readEncoder();
     // Marco el primer elemento como seleccionado
-    printProfileSelection(encoderValue+1);
+    printProfileSelection(encoderValue);
     windowStartTime = millis();
     // Entro al modo selección. Para seleccionar el actual hago un Click
-    do{ 
+    do{
         if (millis() > windowStartTime){
             readThermocouples(&Input1, &Input2);
 
@@ -92,9 +92,9 @@ void setup() {
         // Encoder
         if(myEnc.encoderRotationDetected()){
             // borro el anterior
-            clearProfileSelection(oldEncoderValue+1);
+            clearProfileSelection(oldEncoderValue);
             encoderValue = myEnc.readEncoder();
-            printProfileSelection(encoderValue+1);
+            printProfileSelection(encoderValue);
             oldEncoderValue = encoderValue;
         }
     }while(!isButtonClicked());// Si hubo pulsación de tecla entonces tomo la posición actual como el seleccionado

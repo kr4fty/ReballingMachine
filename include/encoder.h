@@ -10,7 +10,7 @@
 #include "config.h"
 
 #define ENCODER_VCC_PIN               -1 // Using onboard VCC
-#define ENCODER_STEPS                  4
+#define ENCODER_STEPS                  2
 #define ENCODER_CENTRAL_PIN_TO_VCC false // middle pin connected to GND
 
 AiEsp32RotaryEncoder myEnc = AiEsp32RotaryEncoder(ENCODER_PIN_A,

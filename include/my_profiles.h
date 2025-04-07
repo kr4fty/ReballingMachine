@@ -130,12 +130,12 @@ void profile_initializeProfiles()
         7
     };
 
-    ReflowHeatingProfileController_addProfile(&reflowHeatingProfileController, "sn60pb40v1", sn60pb40v1);
-    ReflowHeatingProfileController_addProfile(&reflowHeatingProfileController, "sn60pb40v2", sn60pb40v2);
-    ReflowHeatingProfileController_addProfile(&reflowHeatingProfileController, "sn60pb40v3", sn60pb40v3);
-    ReflowHeatingProfileController_addProfile(&reflowHeatingProfileController, "sn63pb37", sn63pb37);
-    ReflowHeatingProfileController_addProfile(&reflowHeatingProfileController, "sn42bi576ag04", sn42bi576ag04);
-    ReflowHeatingProfileController_addProfile(&reflowHeatingProfileController, "sn965ag30cu05", sn965ag30cu05);
+    ReflowHeatingProfileController_addProfile(&reflowHeatingProfileController, "Sn60Pb40 v.1", sn60pb40v1);
+    ReflowHeatingProfileController_addProfile(&reflowHeatingProfileController, "Sn60Pb40 v.2", sn60pb40v2);
+    ReflowHeatingProfileController_addProfile(&reflowHeatingProfileController, "Sn60Pb40 v.3", sn60pb40v3);
+    ReflowHeatingProfileController_addProfile(&reflowHeatingProfileController, "Sn63Pb37", sn63pb37);
+    ReflowHeatingProfileController_addProfile(&reflowHeatingProfileController, "Sn42Bi57.6Ag0.4", sn42bi576ag04);
+    ReflowHeatingProfileController_addProfile(&reflowHeatingProfileController, "Sn96.5Ag3.0Cu0.5", sn965ag30cu05);
 
     // Obtengo el numero de perfiles Guardados
     profileCount = ReflowHeatingProfileController_getProfileCount(&reflowHeatingProfileController);
