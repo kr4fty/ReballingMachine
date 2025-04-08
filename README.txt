@@ -98,11 +98,11 @@ Control de Fase
 Calentadores
 ============
     * Calentador Inferior
-          Se utiliza uno de 1200W, obtenido de una Arrocera eléctrica
-          60 Ohms, 14cm de diámetro aproximado
+          Se utiliza uno de 1300W, obtenido de una Air Fryer eléctrica
+          39 Ohms, 14cm de diámetro aproximado
 
     * Calentador Superior
-          Se utiliza un calentador de 1500W de una Pava eléctrica
+          Se utiliza un calentador de 1800W de una Pava eléctrica
           27 Ohms, 8cm de diámetro aproximado
 
 TIMER y PWM:
