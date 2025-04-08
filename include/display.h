@@ -91,12 +91,12 @@ void printFrameBase(uint16_t *posX, uint16_t *posY, uint8_t length)
     lcd.print("Status Pulsos");
 
     // Cuadriculado
-    for(uint8_t x=ORIGINX; x<(LCD_WIDTH-2); x+=(60/XSCALE)){
+    for(uint8_t x=ORIGINX; x<LCD_WIDTH; x+=(60/XSCALE)){
         for(uint8_t y=LCD_HEIGHT/2+2; y<=ORIGINY+2; y+=3){
             lcd.drawPixel(x, y, ST7735_CYAN); // Lineas punteadas verticales
         }
     }
-    for(uint8_t x=ORIGINX-2; x<LCD_WIDTH-10; x+=3){
+    for(uint8_t x=ORIGINX-2; x<LCD_WIDTH; x+=3){
         for(uint8_t y=ORIGINY; y>=(LCD_HEIGHT/2); y-=(100/(2*YSCALE))){
             lcd.drawPixel(x, y, ST7735_CYAN); // Lineas punteadas horizontales
         }
@@ -110,7 +110,7 @@ void printFrameBase(uint16_t *posX, uint16_t *posY, uint8_t length)
     lcd.print("100");
     lcd.setCursor(0, ORIGINY-4*(100/(2*YSCALE))-(LITTLE_TEXT*8/2));
     lcd.print("200");
-    lcd.setCursor(0*6*LITTLE_TEXT, (LCD_HEIGHT/2)-(LITTLE_TEXT*8));
+    lcd.setCursor(6/2*LITTLE_TEXT, (LCD_HEIGHT/2)-(LITTLE_TEXT*8));
     lcd.setTextColor(ST7735_YELLOW);
     lcd.print((char)248); // 'º'
     lcd.print("C");
@@ -119,10 +119,10 @@ void printFrameBase(uint16_t *posX, uint16_t *posY, uint8_t length)
     lcd.drawLine(ORIGINX, LCD_HEIGHT/2-5, ORIGINX, ORIGINY, ST7735_WHITE); // eje Vertical
     lcd.drawLine(ORIGINX, ORIGINY, LCD_WIDTH-5, ORIGINY, ST7735_WHITE); // eje Horizontal
     // DIbujo las flechas
-    lcd.drawLine(ORIGINX, LCD_HEIGHT/2-5, ORIGINX-2,  LCD_HEIGHT/2-5+5, ST7735_WHITE);
-    lcd.drawLine(ORIGINX, LCD_HEIGHT/2-5, ORIGINX+2,  LCD_HEIGHT/2-5+5, ST7735_WHITE);
-    lcd.drawLine(LCD_WIDTH-5, ORIGINY, LCD_WIDTH-5-5, ORIGINY-2, ST7735_WHITE);
-    lcd.drawLine(LCD_WIDTH-5, ORIGINY, LCD_WIDTH-5-5, ORIGINY+2, ST7735_WHITE);
+    lcd.drawLine(ORIGINX, LCD_HEIGHT/2-5-5, ORIGINX-2,  LCD_HEIGHT/2-5, ST7735_WHITE);
+    lcd.drawLine(ORIGINX, LCD_HEIGHT/2-5-5, ORIGINX+2,  LCD_HEIGHT/2-5, ST7735_WHITE);
+    lcd.drawLine(LCD_WIDTH-1, ORIGINY, LCD_WIDTH-1-5, ORIGINY-2, ST7735_WHITE);
+    lcd.drawLine(LCD_WIDTH-1, ORIGINY, LCD_WIDTH-1-5, ORIGINY+2, ST7735_WHITE);
 
     // Escalamos el Perfil a utilizar
     for(uint8_t i=0; i<length; i++){
@@ -166,14 +166,13 @@ void printProfiles(char profiles[][50], uint8_t profileLength)
 void clearProfileSelection(uint8_t posY)
 {
     lcd.setCursor(1*6*LITTLE_TEXT, (1*8*MIDLE_TEXT)+((1+2*posY)*8*LITTLE_TEXT)); //(1+2*posY)*8*LITTLE_TEXT)
-    lcd.print("  ");
+    lcd.print(" ");
 }
 
 void printProfileSelection(uint8_t posY)
 {
     lcd.setCursor(1*6*LITTLE_TEXT, (1*8*MIDLE_TEXT)+((1+2*posY)*8*LITTLE_TEXT)); //(1+2*posY)*8*LITTLE_TEXT)
-    lcd.print((char)45); // '-'
-    lcd.print((char)175); // '»'
+    lcd.print(">"); // '»'
 }
 
 void printSelectedProfile(const char *name, uint16_t *posX, uint16_t *posY, uint8_t length)
@@ -276,7 +275,7 @@ void printSystemStatus(bool state)
         lcd.print((char)175);   // '>>'
     }
     else{ //Pause
-        lcd.print((char)222);   // 'l'
+        lcd.print((char)222);   // '|'
         lcd.print((char)222);   // '|'
     }
 }

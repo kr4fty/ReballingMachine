@@ -72,7 +72,7 @@ void setup() {
     //printPresentation();
 
     /************************ SELECCIÓN DEL PERFIL A UTILIZAR ****************/
-    // Busco los Perfiles disponibles e inicializo
+    // Busco los Perfiles disponibles y los inicializo
     profile_initializeProfiles();
     // Imprimo menu mostrando los posible Perfiles a seleccionar
     printProfiles(profileNames, profileCount);
@@ -83,7 +83,8 @@ void setup() {
     printProfileSelection(encoderValue);
     windowStartTime = millis();
     // Entro al modo selección. Para seleccionar el actual hago un Click
-    do{
+    while(!isButtonClicked()){
+    // Si hubo pulsación de tecla entonces tomo la posición actual como el seleccionado
         if (millis() > windowStartTime){
             readThermocouples(&Input1, &Input2);
 
@@ -91,13 +92,14 @@ void setup() {
         }
         // Encoder
         if(myEnc.encoderRotationDetected()){
-            // borro el anterior
+            // Borro en el display el anterior seleccionado
             clearProfileSelection(oldEncoderValue);
             encoderValue = myEnc.readEncoder();
+            // Muestro el nuevo seleccionado
             printProfileSelection(encoderValue);
             oldEncoderValue = encoderValue;
         }
-    }while(!isButtonClicked());// Si hubo pulsación de tecla entonces tomo la posición actual como el seleccionado
+    }
     profile_selectProfile(encoderValue);
     //printSelectedProfile(myProfile.name, myProfile.time, myProfile.temperature, myProfile.length);
     /*************************************************************************/
@@ -116,7 +118,7 @@ void setup() {
     /*Serial.println("\tTime\tTemp\tSlope");
     for(uint8_t i=0; i<myProfile.length; i++){
         Serial.printf("%d-\t%d\t%d\t%.2f\n", i, myProfile.time[i], myProfile.temperature[i], tempSlope[i]);
-    }*/
+    }*/    
 
     windowStartTime = millis();
     isPowerOn = true;
@@ -218,6 +220,6 @@ void loop() {
         #endif
 
         zcCounter=0;
-        nextTime=millis() + WINDOW_1Seg;      
+        nextTime=millis() + WINDOW_1Seg;
     }
 }
