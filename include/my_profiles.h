@@ -69,6 +69,11 @@ Tamb_| ______/                                          \_____________
 #define SN42BI576AG04   4
 #define SN965AG30CU05   5
 
+#define STOP_MODE       0
+#define HEATING_MODE    1
+#define STANDBY_MODE    2
+#define COOLING_MODE    3
+
 float tempSlope[20]; // Pendiente de temperatura
 #define MAX_PROFILES 10 // Máximo número de perfiles
 char profileNames[MAX_PROFILES][50]; // Array para almacenar los nombres de los perfiles
@@ -79,6 +84,7 @@ struct ActualProfile{
     const char *name;
     uint16_t time[15]; // Tiempos del perfil seleccionado
     uint16_t temperature[15]; // Setpoints dentro del perfil seleccionado
+    uint16_t melting_point=0; // Tiempo de fusion
     uint8_t length; // Paso dentro del perfil seleccionado
 } myProfile;
  
@@ -94,8 +100,8 @@ void profile_initializeProfiles()
 
     // Definir los perfiles de calentamiento
     ReflowProfile sn60pb40v1 = {
-        {0, 90, 180, 200, 220, 370},
-        {30, 130, 150, 217, 217, 0},
+        {0, 90, 180, 200, 220, 330},
+        {30, 130, 150, 217, 217, 58},
         6
     };
 
@@ -130,12 +136,19 @@ void profile_initializeProfiles()
         7
     };
 
+    ReflowProfile forTest = {
+        {0, 90, 180, 210, 220, 230, 330},
+        {30, 80, 110, 120, 120, 110, 50},
+        7
+    };
+
     ReflowHeatingProfileController_addProfile(&reflowHeatingProfileController, "Sn60Pb40 v.1", sn60pb40v1);
     ReflowHeatingProfileController_addProfile(&reflowHeatingProfileController, "Sn60Pb40 v.2", sn60pb40v2);
     ReflowHeatingProfileController_addProfile(&reflowHeatingProfileController, "Sn60Pb40 v.3", sn60pb40v3);
     ReflowHeatingProfileController_addProfile(&reflowHeatingProfileController, "Sn63Pb37", sn63pb37);
     ReflowHeatingProfileController_addProfile(&reflowHeatingProfileController, "Sn42Bi57.6Ag0.4", sn42bi576ag04);
     ReflowHeatingProfileController_addProfile(&reflowHeatingProfileController, "Sn96.5Ag3.0Cu0.5", sn965ag30cu05);
+    ReflowHeatingProfileController_addProfile(&reflowHeatingProfileController, "Para Test", forTest);
 
     // Obtengo el numero de perfiles Guardados
     profileCount = ReflowHeatingProfileController_getProfileCount(&reflowHeatingProfileController);
@@ -171,11 +184,20 @@ void profile_selectProfile(uint8_t profileSelected)
     for (uint8_t i = 0; i < myProfile.length; i++) {
         myProfile.time[i] = ReflowHeatingProfileController_getTime(&reflowHeatingProfileController, i);
         myProfile.temperature[i] = ReflowHeatingProfileController_getTemperatureForIndex(&reflowHeatingProfileController, i);
-        /*Serial.print("Time: ");
-        Serial.print(myProfile.time[i]);
-        Serial.print(" Temperature: ");
-        Serial.println(myProfile.temperature[i]);*/
+        //Serial.print("Time: ");
+        //Serial.print(myProfile.time[i]);
+        //Serial.print(" Temperature: ");
+        //Serial.println(myProfile.temperature[i]);
     }
+
+    // Busco el punto maximo de temperatura (melting point)
+    for (uint8_t i = 0; i < myProfile.length; i++) {
+        if(myProfile.temperature[i] > myProfile.melting_point){
+            myProfile.melting_point = myProfile.temperature[i];
+        }
+    }
+    //Serial.print("Punto de fusion: ");
+    //Serial.println(myProfile.melting_point);
 }
 
 void profile_preCalculate(float initialTemp, uint16_t initialTime)

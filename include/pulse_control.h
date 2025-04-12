@@ -63,8 +63,8 @@ void IRAM_ATTR zc_ISR()
 void IRAM_ATTR Timer1_ISR()
 {
     if(timerTicks<(t10mSEG-G_PULSE_WIDTH)){ // Si es 0 lo mantengo apagado siempre
-        digitalWrite(RELAY_PIN, HIGH);      // => nunca entraría aquí en ese caso
-        if(digitalRead(RELAY_PIN)){
+        digitalWrite(SALIDA_2, HIGH);      // => nunca entraría aquí en ese caso
+        if(digitalRead(SALIDA_2)){
             isUp = true;
         }
     }
@@ -73,8 +73,8 @@ void IRAM_ATTR Timer1_ISR()
 void IRAM_ATTR Timer2_ISR()
 {
     if(timerTicks>(ZC_PULSE_WIDTH/2)){ // Si es 180 lo mantengo encendido siempre
-        digitalWrite(RELAY_PIN, LOW);  // => nunca entraría aquí en ese caso
-        if(isUp && !digitalRead(RELAY_PIN)){
+        digitalWrite(SALIDA_2, LOW);  // => nunca entraría aquí en ese caso
+        if(isUp && !digitalRead(SALIDA_2)){
             isUp = false;
             totalPulsesSent += 1;
         }
@@ -83,6 +83,14 @@ void IRAM_ATTR Timer2_ISR()
 
 void initPwmPulseSettings()
 {
+    pinMode(ZC_PIN, INPUT);
+    
+    pinMode(SALIDA_1, OUTPUT);
+    pinMode(SALIDA_2, OUTPUT);
+ 
+    digitalWrite(SALIDA_1,LOW); // Apago. Se usa lógica Activo en nivel ALTO
+    digitalWrite(SALIDA_2,LOW); // Apago. Se usa lógica Activo en nivel ALTO
+
     attachInterrupt(digitalPinToInterrupt(ZC_PIN), zc_ISR,RISING);
 
     Timer1 = timerBegin(1000000); // APIv3 1Mhz
@@ -109,11 +117,16 @@ void stopZcInterrupt()
     detachInterrupt(digitalPinToInterrupt(ZC_PIN));
     timerDetachInterrupt(Timer1);
     timerDetachInterrupt(Timer2);
-    digitalWrite(RELAY_PIN, LOW);
+    digitalWrite(SALIDA_2, LOW);
 }
 
 void startZcInterrupt()
 {
     initPwmPulseSettings();
+}
+
+void setPulse(bool state)
+{
+    digitalWrite(SALIDA_1, state?HIGH:LOW);
 }
 #endif

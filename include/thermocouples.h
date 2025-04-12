@@ -41,4 +41,13 @@ void readThermocouples(double* input1, double* input2)
     #endif
 }
 
+void readThermocouple(double* input)
+{
+    *input = thermocouple1.readCelsius();
+    #ifdef ALPHA
+    InputFiltered1 = (ALPHA*(*input)) + ((1-ALPHA)*InputFiltered1);
+    *input = InputFiltered1;
+    #endif
+}
+
 #endif

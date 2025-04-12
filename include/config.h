@@ -53,10 +53,15 @@
 #define TFT_DC      32
 
 // Depuración y  envió de datos por puerto Serial *****************************
-#define DEBUG        1
+//#define DEBUG        1
+#define SERIAL_PLOTER  1
 
 // Salida de control del Calefactor *******************************************
-#define RELAY_PIN   17   // GPIO17
+#define SALIDA_1     4   // GPIO02 uso como ON/OFF
+#define SALIDA_2    17   // GPIO17 uso como PMW
+#define HEATER_PIN SALIDA_1
+#define COOLER_PIN SALIDA_2
+#define RELAY_PIN HEATER_PIN //para mantener la compatibilidad en el código
 
 // Constantes PID *************************************************************
 #define CONSTANTES
@@ -65,9 +70,22 @@
 #define Kp         2.0  //1.570     4.215       1.550           0.95
 #define Ki   0.0038989  //0.009636  0.03229     0.01418         0.0064518
 #define Kd      9.2996  //0         9.887       0               17.5494
-#endif
+
 // Pequeño OK       Kp= 0.5, Ki= 0.0038989, Kd= 9.2996
 // Grande OK        Kp= 0.95, Ki= 0.0064518, Kd= 17.5494
+
+// Calefactor
+#define KP_HEATER       0.95
+#define KI_HEATER  0.0064518
+#define KD_HEATER    17.5494
+
+// Extractor de calor Inferior
+#define KP_COOLER        2.5// 0.1
+#define KI_COOLER        0.1// 0.004
+#define KD_COOLER        2.5// 0.001
+#define COOLER_MIN_ANGLE  80 // Mínimo angulo de disparo el cual el motor se frena 180-150
+#define COOLER_MAX_ANGLE 149 // Máximo angulo disparo para velocidad plena 180-50
+#endif
 
 // Filtro Digital para la entrada de Temperatura
 #define ALPHA    0.250
