@@ -85,7 +85,10 @@ struct ActualProfile{
     uint16_t time[15]; // Tiempos del perfil seleccionado
     uint16_t temperature[15]; // Setpoints dentro del perfil seleccionado
     uint16_t melting_point=0; // Tiempo de fusion
+    unsigned long melting_point_time;
     uint8_t length; // Paso dentro del perfil seleccionado
+    uint8_t stageNumber_heatingMode=1; // numero de etapa para el modo Calentamiento
+    uint8_t stageNumber_coolingMode=1; // numero de etapa para el modo Enfriamiento
 } myProfile;
  
 ReflowHeatingProfileController reflowHeatingProfileController;
@@ -194,10 +197,14 @@ void profile_selectProfile(uint8_t profileSelected)
     for (uint8_t i = 0; i < myProfile.length; i++) {
         if(myProfile.temperature[i] > myProfile.melting_point){
             myProfile.melting_point = myProfile.temperature[i];
+            myProfile.melting_point_time = myProfile.time[i]*1000;
         }
     }
     //Serial.print("Punto de fusion: ");
-    //Serial.println(myProfile.melting_point);
+    //Serial.print(myProfile.melting_point);
+    //Serial.print(" Tiempo: ");
+    //Serial.println(myProfile.melting_point_time);
+
 }
 
 void profile_preCalculate(float initialTemp, uint16_t initialTime)
@@ -210,6 +217,29 @@ void profile_preCalculate(float initialTemp, uint16_t initialTime)
     for(uint8_t i=0; i<myProfile.length-1; i++){
         tempSlope[i] = (float)(myProfile.temperature[i+1]-myProfile.temperature[i])/(myProfile.time[i+1]-myProfile.time[i]);
     }
+}
+
+double profile_getNextPointOnGraph(double time, uint8_t mode)
+{
+    uint8_t *stage;
+    if(mode == HEATING_MODE){
+        stage = &myProfile.stageNumber_heatingMode;
+    }
+    else if(mode == COOLING_MODE){
+        stage = &myProfile.stageNumber_coolingMode;
+    }
+
+    double nextPoint;
+    //Serial.printf("\n %f %d",time, *stage);
+    if(time>=myProfile.time[(*stage)]){
+        // Paso a la siguiente etapa
+        (*stage)++;
+        //Serial.printf("\tCambia, %d %d\n", (*stage), (uint16_t)time);
+    }
+    nextPoint = tempSlope[(*stage)-1]*(time-myProfile.time[(*stage)-1]) + myProfile.temperature[(*stage)-1];
+    //Serial.printf("%.3f\t%d\t%.2f\n", time, (*stage), nextPoint);
+
+    return nextPoint;
 }
  
 #endif

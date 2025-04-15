@@ -19,7 +19,9 @@
 #include "my_profiles.h"
 #include "tclock.h"
 
-#define WindowSize        200
+#define accel               1 // para acelerar el tiempo, cuanto mas grande mas se acelera, un buen numero es 10
+
+#define WindowSize        200/accel
 #define WindowSize_cooler 200
 #define DELAY_TIME         10  // Retraso de la curva real a la del perfil
 unsigned long windowStartTime;
@@ -39,9 +41,10 @@ double Setpoint2, Input2, Output2;
 PID heaterPID = PID(&Input1, &Output1, &Setpoint1, KP_HEATER, KI_HEATER, KD_HEATER, DIRECT);
 PID coolerPID = PID(&Input2, &Output2, &Setpoint2, KP_COOLER, KI_COOLER, KD_COOLER, REVERSE);
 
-float perfilRamp;
-uint16_t profileTime;
-uint8_t etapa=1;
+double heatingModeGraph, coolingModeGraph;
+double time_heatingMode;
+double time_coolingMode;
+
 uint8_t modoFuncionamiento; //1: modo Calefacción, 2: modo en espera, 3: modo Ventilación
 
 double ambTemperature;
@@ -49,7 +52,7 @@ double ambTemperature;
 // the setup function runs once when you press reset or power the board
 void setup() {
     //DEBUG
-    #if  defined(DEBUG) || defined(SERIAL_PLOTER)
+    #if  defined(DEBUG) || defined(SERIAL_PLOTTER)
     Serial.begin(115200);
     #endif
 
@@ -91,7 +94,8 @@ void setup() {
     printProfileSelection(encoderValue);
     windowStartTime = millis();
     // Entro al modo selección. Para seleccionar el actual hago un Click
-    while(!isButtonClicked()){
+    uint8_t key=0;
+    while(key != SHORT_CLICK){
     // Si hubo pulsación de tecla entonces tomo la posición actual como el seleccionado
         actualTime = millis();
         if (actualTime > windowStartTime){
@@ -108,6 +112,7 @@ void setup() {
             printProfileSelection(encoderValue);
             oldEncoderValue = encoderValue;
         }
+        key = isButtonClicked();
     }
     profile_selectProfile(encoderValue);
     //printSelectedProfile(myProfile.name, myProfile.time, myProfile.temperature, myProfile.length);
@@ -150,10 +155,15 @@ void setup() {
 void loop() {
     actualTime = millis();
     // Detectando el retardo del calentador
-    if(etapa==1){
+    if(myProfile.stageNumber_heatingMode==1){
         if((uint16_t)Input1<=(uint16_t)ambTemperature){
             delayTime = actualTime - startTime;
             //Serial.printf("DELAY: %2.3f\n\n", delayTime);
+        }
+        else{
+            if(millis()<delayTime+250){
+                Serial.printf("\t\tDelay: %d\n", (uint16_t)(delayTime/1000));
+            }
         }
     }
     // Senso la temperatura cada 200mSeg 
@@ -165,39 +175,40 @@ void loop() {
         
         // Perfil térmico *****************************************************
         officialTime = actualTime - startTime;
-
-        profileTime =(uint16_t)((actualTime-startTime)/1000);
         
-        /*if(modoFuncionamiento == HEATING_MODE){// || modoFuncionamiento == STANDBY_MODE){
-            profileTime =(uint16_t)((actualTime-startTime)/1000);
+        time_heatingMode =((officialTime)*accel/1000.0);
+        time_coolingMode =(officialTime-delayTime)*accel/1000.0;
+        if(time_coolingMode<0){
+            time_coolingMode = 0;
         }
-        else if(modoFuncionamiento == COOLING_MODE){
-            profileTime =(uint16_t)((actualTime-startTime-delayTime)/1000);
-        }*/
 
         // Trazado del perfil ideal
-        if(profileTime < myProfile.time[etapa] && etapa < myProfile.length){
-            perfilRamp = tempSlope[etapa-1]*(profileTime-myProfile.time[etapa-1]) + myProfile.temperature[etapa-1];
-            //Serial.printf("%d - %d\n", (profileTime+1), myProfile.time[etapa]);
-            if((uint16_t)(profileTime+1)==myProfile.time[etapa]){
-                // Paso a la siguiente etapa
-                etapa++;
-            }
+        if((uint16_t)time_heatingMode <= myProfile.time[myProfile.stageNumber_heatingMode] && myProfile.stageNumber_heatingMode < myProfile.length){
+           heatingModeGraph = profile_getNextPointOnGraph(time_heatingMode, HEATING_MODE);
 
         }
-        else{
-            perfilRamp = ambTemperature;
+
+        if((uint16_t)time_coolingMode <= myProfile.time[myProfile.stageNumber_coolingMode] && myProfile.stageNumber_coolingMode < myProfile.length){
+           coolingModeGraph = profile_getNextPointOnGraph(time_coolingMode, COOLING_MODE);
+
         }
 
-        if(modoFuncionamiento==HEATING_MODE){
-            Setpoint1 = perfilRamp;
-        }
-        else if(modoFuncionamiento==STANDBY_MODE){
-            Setpoint1 = 0;
-            Setpoint2 = perfilRamp;
-        }
-        else if(modoFuncionamiento==COOLING_MODE){
-            Setpoint2 = perfilRamp;
+        switch (modoFuncionamiento)
+        {
+            case HEATING_MODE:
+                Setpoint1 = heatingModeGraph;
+                Setpoint2 = coolingModeGraph;
+                break;
+            case STANDBY_MODE:
+                Setpoint1 = heatingModeGraph;
+                Setpoint2 = coolingModeGraph;
+                break;
+            case COOLING_MODE:
+                Setpoint1 = heatingModeGraph;
+                Setpoint2 = coolingModeGraph;
+                break;            
+            default:
+                break;
         }
         //*********************************************************************
 
@@ -205,18 +216,20 @@ void loop() {
         switch (modoFuncionamiento)
         {
             case HEATING_MODE:                
-                if((uint16_t)perfilRamp <= myProfile.melting_point){
+                if(officialTime >= myProfile.melting_point_time){
                     maxTemp_time = officialTime;
-                    //Serial.printf("Modo %s Tiempo: %d  Etapa: %d Ramp: %.2f max_Time %d\n", "CALEFACCIÓN", (uint16_t)officialTime/1000, etapa, perfilRamp, maxTemp_time);   
+                    modoFuncionamiento = STANDBY_MODE; // cambio a Modo en espera
+                    //coolerPID.SetMode(AUTOMATIC);
+                    //Serial.print("Cambiando a modo en Espera\n");
                 }
                 else{
-                    modoFuncionamiento = STANDBY_MODE; // cambio a Modo en espera
-                    //Serial.print("Cambiando a modo en Espera\n");
+                    //Serial.printf("Modo %s Tiempo: %d  Etapa: %d Ramp: %.2f max_Time %d\n", "CALEFACCIÓN", (uint16_t)(officialTime*accel/1000), myProfile.stageNumber_heatingMode, heatingModeGraph, (uint16_t)(maxTemp_time*accel/1000));   
                 }
                 break;
             case STANDBY_MODE:
                 if(officialTime >= (maxTemp_time+delayTime)){
                     modoFuncionamiento = COOLING_MODE; // Cambio a Modo Enfriamiento activo
+                    //heaterPID.SetMode(MANUAL);
                     //Serial.print("Cambiando a modo Cooling\n");
                 }
                 else{
@@ -224,17 +237,21 @@ void loop() {
                 }
                 break;
             case COOLING_MODE:
-                if((uint16_t)perfilRamp <= myProfile.temperature[myProfile.length-1]){
+                if((uint16_t)coolingModeGraph <= myProfile.temperature[myProfile.length-1]){
                     modoFuncionamiento = STOP_MODE;
                     //Serial.print("Deteniendo... \n");
                 }
                 else{
-                    //Serial.printf("Modo %s Tiempo: %d  Etapa: %d\n", "ENFRIAMIENTO", (uint16_t)officialTime/1000, etapa);
+                    //Serial.printf("Modo %s Tiempo: %d  Etapa: %d\n", "ENFRIAMIENTO", (uint16_t)(officialTime*accel/1000), myProfile.stageNumber_heatingMode);
                 }
                 break;
             default:
+                coolerPID.SetMode(MANUAL);
                 break;
         }
+        #ifdef SERIAL_PLOTTER
+        //Serial.printf("$%.2f %d %.2f;",(float)((actualTime-startTime)*accel/1000.0), (uint8_t)myProfile.stageNumber_heatingMode, (float)heatingModeGraph);
+        #endif
 
         windowStartTime = actualTime + WindowSize;
     }
@@ -258,7 +275,7 @@ void loop() {
                 if(modoFuncionamiento==HEATING_MODE){
                     heaterPID.SetMode(AUTOMATIC);
                 }
-                else if(modoFuncionamiento==COOLING_MODE){
+                else if(modoFuncionamiento==COOLING_MODE || modoFuncionamiento==STANDBY_MODE){
                     heaterPID.SetMode(AUTOMATIC);
                 }
             }
@@ -272,34 +289,45 @@ void loop() {
     if(isPowerOn){ // En funcionamiento?
     /********************************** PID **********************************/
         // Toma Input y actúa. En la variable Output se guarda lo calculado
-        if(modoFuncionamiento==HEATING_MODE){
-            heaterPID.Compute();
-        }
-        else if(modoFuncionamiento==STANDBY_MODE){
-            heaterPID.SetMode(MANUAL);
-            coolerPID.Compute();
-        }
-        else if(modoFuncionamiento==COOLING_MODE) {
-            coolerPID.Compute();
+        switch (modoFuncionamiento)
+        {
+            case HEATING_MODE:
+                heaterPID.Compute();
+                heaterPID.Compute();
+                break;
+            case STANDBY_MODE:
+                heaterPID.Compute();
+                coolerPID.Compute();
+                break;
+            case COOLING_MODE:
+                coolerPID.Compute();
+                break;
+            default:
+                break;
         }
     /*************************************************************************/
 
     /***************************** CONTROL DE FASE ***************************/
         // Se envía pulso de habilitación del TRIAC
-        if(modoFuncionamiento==HEATING_MODE){
-            setPulse(Output1);
-            setPwmPulse(0);
-        }
-        else if(modoFuncionamiento==STANDBY_MODE){
-            setPulse(LOW);
-            setPwmPulse(Output2);
-        }
-        else if(modoFuncionamiento==COOLING_MODE){
-            setPulse(LOW);
-            if(Output2==COOLER_MIN_ANGLE){
-                Output2 = 60;
-            }
-            setPwmPulse(Output2);
+        switch (modoFuncionamiento)
+        {
+            case HEATING_MODE:
+                setPulse(Output1);
+                setPwmPulse(Output2);
+                break;
+            case STANDBY_MODE:
+                setPulse(Output1);
+                setPwmPulse(Output2);
+                break;
+            case COOLING_MODE:
+                setPulse(LOW);
+                /*if(Output2==COOLER_MIN_ANGLE){
+                    Output2 = 60;
+                }*/
+                setPwmPulse(Output2);
+                break;
+            default:
+                break;
         }
         #ifdef ZC_INTERRUPT_FILTER
         // Filtro para detectar falsos Cruces por Cero
@@ -327,11 +355,11 @@ void loop() {
         }
 
         // Voy gráficando la evolución de la temperatura con el tiempo
-        printPoint((uint16_t)(officialTime/1000), (uint16_t)Input1);
+        printPoint((uint16_t)((actualTime-startTime)*accel/1000), (uint16_t)Input1);
         //printPoint(officialTime/1000, (uint16_t)Input1, ST7735_YELLOW, 1, 4);
 
         //printOutputs(Output1, zcCounter);
-        //printActualSetpoint((uint16_t)etapa);
+        //printActualSetpoint((uint16_t)stageNumber_heatingMode);
         printZcCount(zcCounter);
 
         /******* CHEQUEO DE CORRESPONDENCIA PULSOS ENVIADOS/RECIBIDOS ********/
@@ -340,13 +368,14 @@ void loop() {
         /*********************************************************************/
 
         // DEBUG
-        #ifdef SERIAL_PLOTER
-        unsigned long Time = (actualTime-startTime)/1000.0;
-        //Serial.printf("$%.2f %.2f %d %.2f;",Input1, Input2, etapa, perfilRamp);
-        Serial.printf("$%d %d %d %d;\n",(uint16_t)Input1, (uint16_t)(Output1*50), (Output2-COOLER_MIN_ANGLE)<0?0:(uint16_t)(Output2-COOLER_MIN_ANGLE), (uint16_t)perfilRamp);
+        #ifdef SERIAL_PLOTTER
+        unsigned long Time = (actualTime-startTime)*accel/1000.0;
+        //Serial.printf("$%.2f %.2f %d %.2f;",Input1, Input2, stageNumber_heatingMode, heatingModeGraph);
+        //Serial.printf("$%.2f %d %.2f;",(float)((actualTime-startTime)*accel/1000.0), (uint8_t)stageNumber_heatingMode, (float)heatingModeGraph);
+        Serial.printf("$%d %d %d %d %d;\n",(uint16_t)Input1, (uint16_t)(Output1*50), (Output2-COOLER_MIN_ANGLE)<0?0:(uint16_t)(Output2-COOLER_MIN_ANGLE), (uint16_t)heatingModeGraph, (uint16_t)coolingModeGraph);
         #endif
 
         zcCounter=0;
-        nextTime=millis() + WINDOW_1Seg;
+        nextTime=millis() + WINDOW_1Seg/accel;
     }
 }

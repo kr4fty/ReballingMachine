@@ -54,7 +54,7 @@
 
 // Depuración y  envió de datos por puerto Serial *****************************
 //#define DEBUG        1
-#define SERIAL_PLOTER  1
+#define SERIAL_PLOTTER  1
 
 // Salida de control del Calefactor *******************************************
 #define SALIDA_1     4   // GPIO02 uso como ON/OFF
