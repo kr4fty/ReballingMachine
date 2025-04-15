@@ -83,8 +83,8 @@
 #define KP_COOLER        2.5// 0.1
 #define KI_COOLER        0.1// 0.004
 #define KD_COOLER        2.5// 0.001
-#define COOLER_MIN_ANGLE  80 // Mínimo angulo de disparo el cual el motor se frena 180-150
-#define COOLER_MAX_ANGLE 149 // Máximo angulo disparo para velocidad plena 180-50
+#define COOLER_MIN_ANGLE  60 // Mínimo angulo de disparo el cual el motor se frena 180-150
+#define COOLER_MAX_ANGLE 150 // Máximo angulo disparo para velocidad plena 180-50
 #endif
 
 // Filtro Digital para la entrada de Temperatura

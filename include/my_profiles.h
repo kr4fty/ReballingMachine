@@ -197,7 +197,7 @@ void profile_selectProfile(uint8_t profileSelected)
     for (uint8_t i = 0; i < myProfile.length; i++) {
         if(myProfile.temperature[i] > myProfile.melting_point){
             myProfile.melting_point = myProfile.temperature[i];
-            myProfile.melting_point_time = myProfile.time[i]*1000;
+            myProfile.melting_point_time = myProfile.time[i];
         }
     }
     //Serial.print("Punto de fusion: ");

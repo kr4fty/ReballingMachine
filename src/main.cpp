@@ -193,62 +193,59 @@ void loop() {
 
         }
 
-        switch (modoFuncionamiento)
-        {
-            case HEATING_MODE:
-                Setpoint1 = heatingModeGraph;
-                Setpoint2 = coolingModeGraph;
-                break;
-            case STANDBY_MODE:
-                Setpoint1 = heatingModeGraph;
-                Setpoint2 = coolingModeGraph;
-                break;
-            case COOLING_MODE:
-                Setpoint1 = heatingModeGraph;
-                Setpoint2 = coolingModeGraph;
-                break;            
-            default:
-                break;
-        }
+
+
         //*********************************************************************
 
-        // modos de trabajo
-        switch (modoFuncionamiento)
-        {
-            case HEATING_MODE:                
-                if(officialTime >= myProfile.melting_point_time){
-                    maxTemp_time = officialTime;
-                    modoFuncionamiento = STANDBY_MODE; // cambio a Modo en espera
-                    //coolerPID.SetMode(AUTOMATIC);
-                    //Serial.print("Cambiando a modo en Espera\n");
+        if(isPowerOn){ // En funcionamiento?
+        /********************************** PID **********************************/
+            // Toma Input se actúa. En la variable Output se guarda lo calculado
+            if(time_heatingMode<=myProfile.melting_point_time){
+                Setpoint1 = heatingModeGraph;
+                heaterPID.Compute();
+                setPulse(Output1?HIGH:LOW);
+            }
+            else{
+                Setpoint1 = 0;
+                heaterPID.SetMode(MANUAL);
+                setPulse(LOW);
+            }
+            
+            if(time_coolingMode>=myProfile.melting_point_time){
+                coolerPID.SetMode(AUTOMATIC);
+                Setpoint2 = coolingModeGraph;
+                coolerPID.Compute();
+                if(Output2 == COOLER_MIN_ANGLE){
+                    Output2 = 0;
                 }
-                else{
-                    //Serial.printf("Modo %s Tiempo: %d  Etapa: %d Ramp: %.2f max_Time %d\n", "CALEFACCIÓN", (uint16_t)(officialTime*accel/1000), myProfile.stageNumber_heatingMode, heatingModeGraph, (uint16_t)(maxTemp_time*accel/1000));   
-                }
-                break;
-            case STANDBY_MODE:
-                if(officialTime >= (maxTemp_time+delayTime)){
-                    modoFuncionamiento = COOLING_MODE; // Cambio a Modo Enfriamiento activo
-                    //heaterPID.SetMode(MANUAL);
-                    //Serial.print("Cambiando a modo Cooling\n");
-                }
-                else{
-                    //Serial.println("En espera");
-                }
-                break;
-            case COOLING_MODE:
-                if((uint16_t)coolingModeGraph <= myProfile.temperature[myProfile.length-1]){
-                    modoFuncionamiento = STOP_MODE;
-                    //Serial.print("Deteniendo... \n");
-                }
-                else{
-                    //Serial.printf("Modo %s Tiempo: %d  Etapa: %d\n", "ENFRIAMIENTO", (uint16_t)(officialTime*accel/1000), myProfile.stageNumber_heatingMode);
-                }
-                break;
-            default:
+                setPwmPulse(Output2);
+            }
+            else{
+                Setpoint2 = 0;
                 coolerPID.SetMode(MANUAL);
-                break;
+                setPwmPulse(0);
+            }
+
+        /*************************************************************************/
+    
+        /***************************** CONTROL DE FASE ***************************/
+            // Se envía pulso de habilitación del TRIAC
+            /*setPulse(Output1);
+            if(Output2 == COOLER_MIN_ANGLE){
+                Output2 = 0;
+            }
+            setPwmPulse(Output2);*/
+            
+            #ifdef ZC_INTERRUPT_FILTER
+            // Filtro para detectar falsos Cruces por Cero
+            if(millis()>zcNextTime && zcFlag){
+                zcFlag = false;
+                zcCounter++;
+            }
+            #endif
+        /*************************************************************************/
         }
+
         #ifdef SERIAL_PLOTTER
         //Serial.printf("$%.2f %d %.2f;",(float)((actualTime-startTime)*accel/1000.0), (uint8_t)myProfile.stageNumber_heatingMode, (float)heatingModeGraph);
         #endif
@@ -285,59 +282,6 @@ void loop() {
         }
     }
     /*************************************************************************/
-
-    if(isPowerOn){ // En funcionamiento?
-    /********************************** PID **********************************/
-        // Toma Input y actúa. En la variable Output se guarda lo calculado
-        switch (modoFuncionamiento)
-        {
-            case HEATING_MODE:
-                heaterPID.Compute();
-                heaterPID.Compute();
-                break;
-            case STANDBY_MODE:
-                heaterPID.Compute();
-                coolerPID.Compute();
-                break;
-            case COOLING_MODE:
-                coolerPID.Compute();
-                break;
-            default:
-                break;
-        }
-    /*************************************************************************/
-
-    /***************************** CONTROL DE FASE ***************************/
-        // Se envía pulso de habilitación del TRIAC
-        switch (modoFuncionamiento)
-        {
-            case HEATING_MODE:
-                setPulse(Output1);
-                setPwmPulse(Output2);
-                break;
-            case STANDBY_MODE:
-                setPulse(Output1);
-                setPwmPulse(Output2);
-                break;
-            case COOLING_MODE:
-                setPulse(LOW);
-                /*if(Output2==COOLER_MIN_ANGLE){
-                    Output2 = 60;
-                }*/
-                setPwmPulse(Output2);
-                break;
-            default:
-                break;
-        }
-        #ifdef ZC_INTERRUPT_FILTER
-        // Filtro para detectar falsos Cruces por Cero
-        if(millis()>zcNextTime && zcFlag){
-            zcFlag = false;
-            zcCounter++;
-        }
-        #endif
-    /*************************************************************************/
-    }
 
     actualTime = millis();
     if(actualTime>nextTime){  // Una vez por segundo
