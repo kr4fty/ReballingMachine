@@ -162,7 +162,7 @@ void loop() {
         }
         else{
             if(millis()<delayTime+250){
-                Serial.printf("\t\tDelay: %d\n", (uint16_t)(delayTime/1000));
+                //Serial.printf("\t\tDelay: %d\n", (uint16_t)(delayTime/1000));
             }
         }
     }
@@ -248,6 +248,7 @@ void loop() {
 
         #ifdef SERIAL_PLOTTER
         //Serial.printf("$%.2f %d %.2f;",(float)((actualTime-startTime)*accel/1000.0), (uint8_t)myProfile.stageNumber_heatingMode, (float)heatingModeGraph);
+        Serial.printf("$%d %d %d %d %d;\n",(uint16_t)Input1, (uint16_t)(Output1*50), (Output2-COOLER_MIN_ANGLE)<0?0:(uint16_t)(Output2-COOLER_MIN_ANGLE), (uint16_t)heatingModeGraph, (uint16_t)coolingModeGraph);
         #endif
 
         windowStartTime = actualTime + WindowSize;
@@ -316,7 +317,7 @@ void loop() {
         unsigned long Time = (actualTime-startTime)*accel/1000.0;
         //Serial.printf("$%.2f %.2f %d %.2f;",Input1, Input2, stageNumber_heatingMode, heatingModeGraph);
         //Serial.printf("$%.2f %d %.2f;",(float)((actualTime-startTime)*accel/1000.0), (uint8_t)stageNumber_heatingMode, (float)heatingModeGraph);
-        Serial.printf("$%d %d %d %d %d;\n",(uint16_t)Input1, (uint16_t)(Output1*50), (Output2-COOLER_MIN_ANGLE)<0?0:(uint16_t)(Output2-COOLER_MIN_ANGLE), (uint16_t)heatingModeGraph, (uint16_t)coolingModeGraph);
+        //Serial.printf("$%d %d %d %d %d;\n",(uint16_t)Input1, (uint16_t)(Output1*50), (Output2-COOLER_MIN_ANGLE)<0?0:(uint16_t)(Output2-COOLER_MIN_ANGLE), (uint16_t)heatingModeGraph, (uint16_t)coolingModeGraph);
         #endif
 
         zcCounter=0;

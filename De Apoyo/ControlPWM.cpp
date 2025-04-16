@@ -39,6 +39,12 @@ void setup() {
 
   encoder_setBasicParameters(0, 180, false, 90, 150);
   nextTime = actualTime + 200;
+
+  encoderCounter = encoder_read();
+  lcd.setCursor(1*6*BIG_TEXT, 1*8*BIG_TEXT+2);
+  lcd.setTextSize(BIG_TEXT);
+  lcd.printf("%4d", encoderCounter);
+  
   while(!isButtonClicked()){
     if (actualTime > nextTime){ 
       readThermocouple(&temperatura);
