@@ -128,5 +128,6 @@ void startZcInterrupt()
 void setPulse(bool state)
 {
     digitalWrite(SALIDA_1, state?HIGH:LOW);
+    digitalWrite(LED_BUILTIN, state?HIGH:LOW);
 }
 #endif

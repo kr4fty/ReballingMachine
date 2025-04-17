@@ -173,6 +173,13 @@ void printPoint(uint16_t posx, uint16_t posy, uint16_t color=ST7735_YELLOW, doub
 
 void printProfiles(char profiles[][50], uint8_t profileLength)
 {
+    uint8_t y;
+    if(profileLength<8){
+        y = 2;
+    }
+    else if(profileLength<15){
+        y = 1;
+    }
     //Serial.printf("Perfiles: %d", profileLength);
     lcd.fillScreen(ST7735_BLACK);
     lcd.setTextSize(MIDLE_TEXT);
@@ -182,7 +189,7 @@ void printProfiles(char profiles[][50], uint8_t profileLength)
     lcd.setTextColor(ST7735_WHITE, ST7735_BLACK);
     lcd.setTextSize(LITTLE_TEXT);
     for(uint8_t i=1; i<=profileLength; i++){
-        lcd.setCursor(3*FONT_W*LITTLE_TEXT, (1+2*i)*FONT_H*LITTLE_TEXT);
+        lcd.setCursor(3*FONT_W*LITTLE_TEXT, (1+y*i)*FONT_H*LITTLE_TEXT);
         lcd.printf("%s", profiles[i-1]);
         //Serial.println("Imprimo perfil");
     }
@@ -190,15 +197,30 @@ void printProfiles(char profiles[][50], uint8_t profileLength)
     lcd.setTextColor(ST7735_YELLOW, ST7735_BLACK);
 }
 
-void clearProfileSelection(uint8_t posY)
+void clearProfileSelection(uint8_t posY, uint8_t profileCount)
 {
-    lcd.setCursor(1*FONT_W*LITTLE_TEXT, (1*FONT_H*MIDLE_TEXT)+((1+2*posY)*FONT_H*LITTLE_TEXT)); //(1+2*posY)*8*LITTLE_TEXT)
+    uint8_t y;
+    if(profileCount<8){
+        y = 2;
+    }
+    else if(profileCount<15){
+        y = 1;
+    }
+
+    lcd.setCursor(1*FONT_W*LITTLE_TEXT, (1*FONT_H*MIDLE_TEXT)+((1*(y-1)+y*posY)*FONT_H*LITTLE_TEXT)); //(1+2*posY)*8*LITTLE_TEXT)
     lcd.print(" ");
 }
 
-void printProfileSelection(uint8_t posY)
+void printProfileSelection(uint8_t posY, uint8_t profileCount)
 {
-    lcd.setCursor(1*FONT_W*LITTLE_TEXT, (1*FONT_H*MIDLE_TEXT)+((1+2*posY)*FONT_H*LITTLE_TEXT)); //(1+2*posY)*8*LITTLE_TEXT)
+    uint8_t y;
+    if(profileCount<8){
+        y = 2;
+    }
+    else if(profileCount<15){
+        y = 1;
+    }
+    lcd.setCursor(1*FONT_W*LITTLE_TEXT, (1*FONT_H*MIDLE_TEXT)+((1*(y-1)+y*posY)*FONT_H*LITTLE_TEXT)); //(1+2*posY)*8*LITTLE_TEXT)
     lcd.print(">"); // '»'
 }
 

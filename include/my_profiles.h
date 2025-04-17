@@ -195,7 +195,7 @@ void profile_selectProfile(uint8_t profileSelected)
 
     // Busco el punto maximo de temperatura (melting point)
     for (uint8_t i = 0; i < myProfile.length; i++) {
-        if(myProfile.temperature[i] > myProfile.melting_point){
+        if(myProfile.temperature[i] >= myProfile.melting_point){
             myProfile.melting_point = myProfile.temperature[i];
             myProfile.melting_point_time = myProfile.time[i];
         }

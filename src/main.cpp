@@ -51,6 +51,8 @@ double ambTemperature;
  
 // the setup function runs once when you press reset or power the board
 void setup() {
+    pinMode(LED_BUILTIN, OUTPUT);
+
     //DEBUG
     #if  defined(DEBUG) || defined(SERIAL_PLOTTER)
     Serial.begin(115200);
@@ -91,7 +93,7 @@ void setup() {
     encoder_setBasicParameters(0,profileCount-1, true, -1, 10);
     encoderValue = oldEncoderValue = myEnc.readEncoder();
     // Marco el primer elemento como seleccionado
-    printProfileSelection(encoderValue);
+    printProfileSelection(encoderValue, profileCount);
     windowStartTime = millis();
     // Entro al modo selección. Para seleccionar el actual hago un Click
     uint8_t key=0;
@@ -106,10 +108,10 @@ void setup() {
         // Encoder
         if(myEnc.encoderRotationDetected()){
             // Borro en el display el anterior seleccionado
-            clearProfileSelection(oldEncoderValue);
+            clearProfileSelection(oldEncoderValue, profileCount);
             encoderValue = myEnc.readEncoder();
             // Muestro el nuevo seleccionado
-            printProfileSelection(encoderValue);
+            printProfileSelection(encoderValue, profileCount);
             oldEncoderValue = encoderValue;
         }
         key = isButtonClicked();
