@@ -2,14 +2,15 @@
  * 
  *  pulse_control.h
  * 
- *  Encargado de configurar los timers (Timer1 y 2),  para enviar un pulso por 
- *  cada ciclo loop, siempre y cuando llegue un pulso por el pin de Detección
- *  de Cruce por Cero (ZC_PIN). Dicho pulso sera enviado a un Angulo de Disparo
- *  determinado en la variable Output. La misma es entregada por la función de 
- *  calculo del PID.
+ *  Encargado de configurar el Timer para enviar un pulso por, siempre y cuando
+ *  llegue un pulso por el pin de Detección de Cruce por Cero (ZC_PIN).
  * 
- *  La duración del pulso es de unos 15uSeg (G_PULSE_WIDTH). Tiempo suficiente 
- *  para activar el tiristor
+ *  Dicho pulso será enviado con un Angulo de Disparo determinado, que sera 
+ *  provista en la variable Output. Esta variable es calculada por la función
+ *  de calculo del PID.
+ * 
+ *  La duración del pulso es de unos 55.55 uSeg. Tiempo suficiente para activar
+ *  el Triac.
  * 
  *  Utilizando API v3.x del Timer
  * 
@@ -19,115 +20,180 @@
 
 #ifndef PULSE_CONTROL_H
 #define PULSE_CONTROL_H
-
+ 
 #include "config.h"
 
-#define   TIMER1 1
-#define   TIMER2 2
-hw_timer_t *Timer1 = NULL;
-hw_timer_t *Timer2 = NULL;
-uint16_t  timerTicks;
+#define MAX_OUTPUTS 3 // Número máximo de salidas
 
-uint64_t  pulseDelay=0;
-double    pulseDelayTransformed;
+#define TIMER_FREQUENCY 1800000 // 1 MHz
+#define INTERRUPT_FREQUENCY 100 // 100 Hz
+#define MAXIMUN_ANGLE       180 // 180º
+#define ESCALA                1 // Mas grande para mayor resolución, por lo que el ancho del PULSO G sera mas delgado, pero mas uso del mcu
+#define TIMER_INTERVAL (uint16_t)(TIMER_FREQUENCY/(INTERRUPT_FREQUENCY*ESCALA*MAXIMUN_ANGLE))
+
+hw_timer_t *Timer = NULL;
+volatile uint16_t outputAngles[MAX_OUTPUTS]; // Ángulos de disparo para cada salida
+volatile uint16_t currentInterruptCount = 0; // Contador de interrupciones
+volatile bool isItEnabled[MAX_OUTPUTS] = {false, false, false}; // Estan habilidos
+
 volatile uint16_t  zcCounter=0;
 volatile bool isUp;
 volatile uint16_t totalPulsesSent=0;
 
-#ifdef ZC_INTERRUPT_FILTER
-  uint32_t zcNextTime=0;
-  bool zcFlag=false;
-#endif
+void IRAM_ATTR zc_ISR() {
+    // Reiniciar el contador de interrupciones del Timer
+    currentInterruptCount = 0;
 
-void IRAM_ATTR zc_ISR()
-{
-    #ifdef ZC_INTERRUPT_FILTER
+    // Reiniciar los estados de las salidas
+    for (int i = 0; i < MAX_OUTPUTS; i++) {
+        switch (i)
+        {
+            case LOWER_HEATER:
+                digitalWrite(SALIDA_1, LOW); // Activar la salida 1
+                break;
+            case UPPER_HEATER:
+                digitalWrite(SALIDA_3, LOW); // Activar la salida 2
+                break;
+            case EXTRACTOR:
+                digitalWrite(SALIDA_2, LOW); // Activar la salida 3
+                break;
+        
+            default:
+                break;
+        }
+    }
+
+    #ifdef ZC_INTERRUPT_FILTER    
     // Filtro para falsos positivos
     if(!zcFlag){
         zcFlag = true;
         zcNextTime=millis()+WINDOW_INTERRUPT;
-        timerRestart(Timer1);
-        timerRestart(Timer2);
-        timerAlarm(Timer1, timerTicks, false, 0);
-        timerAlarm(Timer2, timerTicks + G_PULSE_WIDTH, false, 0);
     }
     #else
         zcCounter += 1;
-        timerRestart(Timer1);
-        timerRestart(Timer2);
-        timerAlarm(Timer1, timerTicks, false, 0);
-        timerAlarm(Timer2, timerTicks + G_PULSE_WIDTH, false, 0);
+        timerRestart(Timer);
     #endif
 }
 
-void IRAM_ATTR Timer1_ISR()
-{
-    if(timerTicks<(t10mSEG-G_PULSE_WIDTH)){ // Si es 0 lo mantengo apagado siempre
-        digitalWrite(SALIDA_2, HIGH);      // => nunca entraría aquí en ese caso
-        if(digitalRead(SALIDA_2)){
-            isUp = true;
+void IRAM_ATTR Timer_ISR() {
+    currentInterruptCount += 1;
+
+    // Verificar si se debe activar alguna salida
+    for (int i = 0; i < MAX_OUTPUTS; i++) {
+        if(isItEnabled[i]){ // Esta habilitado la salida actual?
+            if (currentInterruptCount == outputAngles[i]) {
+                switch (i)
+                {
+                    case LOWER_HEATER:
+                        digitalWrite(SALIDA_1, HIGH); // Activar la salida 1
+                        break;
+                    case UPPER_HEATER:
+                        digitalWrite(SALIDA_3, HIGH); // Activar la salida 2
+                        break;
+                    case EXTRACTOR:
+                        digitalWrite(SALIDA_2, HIGH); // Activar la salida 3
+                        break;
+                
+                    default:
+                        break;
+                }
+            }
+            // Desactivar la salida después de G_PULSE_WIDTH
+            if (currentInterruptCount == outputAngles[i] + 1) { //<-- +1: sera el ancho G_PULSE_WIDTH 
+                switch (i)
+                {
+                    case LOWER_HEATER:
+                        digitalWrite(SALIDA_1, LOW); // Desactivar la salida 1
+                        break;
+                    case UPPER_HEATER:
+                        digitalWrite(SALIDA_3, LOW); // Desactivar la salida 2
+                        break;
+                    case EXTRACTOR:
+                        digitalWrite(SALIDA_2, LOW); // Desactivar la salida 3
+                        break;
+                
+                    default:
+                        break;
+                }
+                totalPulsesSent += 1;
+            }
         }
     }
 }
 
-void IRAM_ATTR Timer2_ISR()
-{
-    if(timerTicks>(ZC_PULSE_WIDTH/2)){ // Si es 180 lo mantengo encendido siempre
-        digitalWrite(SALIDA_2, LOW);  // => nunca entraría aquí en ese caso
-        if(isUp && !digitalRead(SALIDA_2)){
-            isUp = false;
-            totalPulsesSent += 1;
-        }
-    }
-}
-
-void initPwmPulseSettings()
-{
+void initPwmPulseSettings() {
     pinMode(ZC_PIN, INPUT);
     
     pinMode(SALIDA_1, OUTPUT);
     pinMode(SALIDA_2, OUTPUT);
- 
-    digitalWrite(SALIDA_1,LOW); // Apago. Se usa lógica Activo en nivel ALTO
-    digitalWrite(SALIDA_2,LOW); // Apago. Se usa lógica Activo en nivel ALTO
+    pinMode(SALIDA_3, OUTPUT);
 
-    attachInterrupt(digitalPinToInterrupt(ZC_PIN), zc_ISR,RISING);
+    digitalWrite(SALIDA_1, LOW);
+    digitalWrite(SALIDA_2, LOW);
+    digitalWrite(SALIDA_3, LOW);
 
-    Timer1 = timerBegin(1000000); // APIv3 1Mhz
-    timerAttachInterrupt(Timer1, &Timer1_ISR); // APIv3
-    
-    Timer2 = timerBegin(1000000); // APIv3 1Mhz
-    timerAttachInterrupt(Timer2, &Timer2_ISR); // APIv3
+    attachInterrupt(digitalPinToInterrupt(ZC_PIN), zc_ISR, RISING);
+
+    // Inicializar el temporizador con la nueva API
+    Timer = timerBegin(TIMER_FREQUENCY); // Configura el temporizador a 1.8 MHz
+    timerAttachInterrupt(Timer, &Timer_ISR); // Adjuntar la interrupción
+    timerAlarm(Timer, TIMER_INTERVAL, true, 0); // Configurar el temporizador para que interrumpa cada TIMER_INTERVAL
 }
 
-void setPwmPulse(double output)
+void setPwmPulse(uint8_t outputIndex, double output) {
+    if (outputIndex < MAX_OUTPUTS) {
+        // Calcular el tiempo de activación basado en el ángulo de disparo
+        if(output){ // distinto de 0
+            uint16_t pulseTime = map(output, 0, 180, 180, 10); // Lo pongo dentro de los limites 
+            outputAngles[outputIndex] = pulseTime*ESCALA; // Almacenar el tiempo para la salida correspondiente
+
+            isItEnabled[outputIndex] = true; // Marcar la salida como habilitada
+        }
+        else { //output == 0
+            // Se vio en el osc que ahi esta aproximadamente el centro del pulso de ZC
+            outputAngles[outputIndex] = 172; // CERO
+            isItEnabled[outputIndex] = false; // Marco como deshabilitada para ocupar menos mcu en la ISR del timer
+        }
+
+
+    }
+}
+
+void disablePwm(uint8_t outputIndex)
 {
-    // Para obtener la proporción correcta de la superficie del semiciclo
-    // La superficie del SENO no cambia linealmente con el angulo
-    pulseDelayTransformed = acos(1-output/90.0)*(180.0/M_PI);
-                                                           
-    pulseDelay = t10mSEG-(uint64_t)map(pulseDelayTransformed, 0, ZC_MAX_ANGLE, G_PULSE_WIDTH, t10mSEG-ZC_PULSE_WIDTH/2);
-    // Calculo de los timerTick para el pulseDelay dado
-    // timerTicks = (pulseDelay * 1x10⁻⁶ * 80x10⁶) / PRESCALER = pulseDelay
-    timerTicks = (uint16_t)pulseDelay;
+    isItEnabled[outputIndex] = false;
+    switch (outputIndex)
+    {
+        case LOWER_HEATER:
+            digitalWrite(SALIDA_1, LOW); // Desactivar la salida 1
+            break;
+        case UPPER_HEATER:
+            digitalWrite(SALIDA_3, LOW); // Desactivar la salida 2
+            break;
+        case EXTRACTOR:
+            digitalWrite(SALIDA_2, LOW); // Desactivar la salida 3
+            break;
+    
+        default:
+            break;
+    }
 }
 
 void stopZcInterrupt()
 {
     detachInterrupt(digitalPinToInterrupt(ZC_PIN));
-    timerDetachInterrupt(Timer1);
-    timerDetachInterrupt(Timer2);
+    timerDetachInterrupt(Timer);
+    isItEnabled[LOWER_HEATER] = false;
+    isItEnabled[UPPER_HEATER] = false;
+    isItEnabled[EXTRACTOR] = false;
+    digitalWrite(SALIDA_1, LOW);
     digitalWrite(SALIDA_2, LOW);
+    digitalWrite(SALIDA_3, LOW);
+
 }
 
 void startZcInterrupt()
 {
     initPwmPulseSettings();
-}
-
-void setPulse(bool state)
-{
-    digitalWrite(SALIDA_1, state?HIGH:LOW);
-    digitalWrite(LED_BUILTIN, state?HIGH:LOW);
 }
 #endif

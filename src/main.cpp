@@ -60,7 +60,7 @@ void setup() {
 
     // Calentador
     heaterPID.SetSampleTime(WindowSize);
-    heaterPID.SetOutputLimits(0, 1);
+    heaterPID.SetOutputLimits(HEATER_MIN_ANGLE, HEATER_MAX_ANGLE);
     heaterPID.SetMode(AUTOMATIC);
     // Extractor
     coolerPID.SetSampleTime(WindowSize_cooler);
@@ -149,8 +149,8 @@ void setup() {
     delayTime = 0;
     printProfileName(myProfile.name, ST7735_YELLOW);
 
-    setPwmPulse(0);
-    setPulse(LOW);
+    setPwmPulse(LOWER_HEATER, 0);
+    setPwmPulse(EXTRACTOR, 0);
 }
 
 // the loop function runs over and over again forever
@@ -205,12 +205,12 @@ void loop() {
             if(time_heatingMode<=myProfile.melting_point_time){
                 Setpoint1 = heatingModeGraph;
                 heaterPID.Compute();
-                setPulse(Output1?HIGH:LOW);
+                setPwmPulse(LOWER_HEATER, Output1);
             }
             else{
                 Setpoint1 = 0;
                 heaterPID.SetMode(MANUAL);
-                setPulse(LOW);
+                setPwmPulse(LOWER_HEATER, 0);
             }
             
             if(time_coolingMode>=myProfile.melting_point_time){
@@ -220,12 +220,12 @@ void loop() {
                 if(Output2 == COOLER_MIN_ANGLE){
                     Output2 = 0;
                 }
-                setPwmPulse(Output2);
+                setPwmPulse(EXTRACTOR, Output2);
             }
             else{
                 Setpoint2 = 0;
                 coolerPID.SetMode(MANUAL);
-                setPwmPulse(0);
+                setPwmPulse(EXTRACTOR, 0);
             }
 
         /*************************************************************************/
@@ -268,7 +268,7 @@ void loop() {
                 heaterPID.SetMode(MANUAL);
                 stopZcInterrupt(); // Desactivo interrupciones de cruce por cero
                 coolerPID.SetMode(MANUAL);
-                setPulse(LOW);
+                //setPulse(LOW);
             }
             else{ // ENCENDIDO
                 startZcInterrupt(); // Activo interrupciones de cruce por cero

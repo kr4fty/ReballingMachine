@@ -59,9 +59,13 @@
 // Salida de control del Calefactor *******************************************
 #define SALIDA_1     4   // GPIO02 uso como ON/OFF, MOC3041
 #define SALIDA_2    17   // GPIO17 uso como PMW, MOC3021
+#define SALIDA_3    33   // por ahora no definido
 #define HEATER_PIN SALIDA_1
 #define COOLER_PIN SALIDA_2
 #define RELAY_PIN HEATER_PIN //para mantener la compatibilidad en el código
+#define LOWER_HEATER  0
+#define UPPER_HEATER  1
+#define EXTRACTOR     2
 
 // Constantes PID *************************************************************
 #define CONSTANTES
@@ -78,13 +82,15 @@
 #define KP_HEATER       0.95
 #define KI_HEATER  0.0064518
 #define KD_HEATER    17.5494
+#define HEATER_MIN_ANGLE   0
+#define HEATER_MAX_ANGLE 180
 
 // Extractor de calor Inferior, control PWM
 #define KP_COOLER        2.5// 0.1
 #define KI_COOLER        0.1// 0.004
 #define KD_COOLER        2.5// 0.001
-#define COOLER_MIN_ANGLE  60 // Mínimo angulo de disparo el cual el motor se frena 180-150
-#define COOLER_MAX_ANGLE 150 // Máximo angulo disparo para velocidad plena 180-50
+#define COOLER_MIN_ANGLE  70 // Mínimo angulo de disparo el cual el motor se frena 180-150
+#define COOLER_MAX_ANGLE 132 // Máximo angulo disparo para velocidad plena 180-50
 #endif
 
 // Filtro Digital para la entrada de Temperatura
@@ -98,7 +104,7 @@
 
 // Cruce por Cero *************************************************************
 #define WINDOW_INTERRUPT    8 // mili seg, para omitir interrupciones por ruido
-#define G_PULSE_WIDTH      15 // micro seg. Ancho del pulso en G del triac
+#define G_PULSE_WIDTH      15 // micro seg. Ancho del pulso en G del triac, NO USADO
 #define ZC_PIN             22 // interrupción externa por el GPIO22
 #define WINDOW_1Seg      1000 // milli seconds, 1seg
 #define ZC_MAX_ANGLE      180
@@ -107,7 +113,7 @@
 //#define ZC_INTERRUPT_FILTER // Para evitar falsas interrupciones en ZC_PIN
 
 // Timer **********************************************************************
-#define PRESCALER          80 // con 80 me queda bien para el rango utilizado
+#define PRESCALER          80 // con 80 me queda bien para el rango utilizado, NO USADO
 
 // Actualizacion del firmware a travez de OTA *********************************
 //#define ARDUINO_OTA       1 // Definido automatimente en "Platformio.ini", al
