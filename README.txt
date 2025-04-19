@@ -94,6 +94,38 @@ Control de Fase
           Por lo que a el momento 0 desde donde comienza cada ciclo, esta en 
           aproximadamente 600 desde el momento en que se recibe la interrupción
 
+        * Al trabajar con UNA salida pseudo-PWM utilizamos dos timers para
+          controlar el pulso de activación del Triac.
+          Ahora si quisiera trabajar con dos salidas al mismo, pseudo-PWM,
+          con este método seria imposible, ya que al enviar un pequeño pulso
+          los timers cuentan hasta:
+
+              Timer 1: timerTicks <---------- Pulso de subida
+              Timer 2: timerTicks + G_PULSE_WIDTH <-----Pulso de bajada
+          
+          El tema es como implementar los dos pulsos simultáneos, que lógica
+          usar si se quiere implementar por medio de los dos timers, por que
+          se solaparían
+
+          Solución:
+            Se utiliza un solo Timer. Este oscila a una frecuencia de 1.8MHz y
+            se configura a timerAlarm() para que produzca un interrupción en 
+            unos TIMER_INTERVAL cuentas. Este valor de TIMER_INTERVAL es fijo
+            por lo que me dara los 10 mili segundos divididos en 180, de los
+            grados. Luego dentro de cada interrupción voy sumando un contador y
+            verificando en cada momento si una de las salidas coincide con la
+            cuenta de este contador para poner en estado alto la salida.
+            Luego para bajar, como TIMER_INTERVAL es de aprox. 55.55 uSeg, en
+            la siguiente interrupción se pone en bajo el pin de salida,
+            logrando de esta manera que se envie un pulso por la salida
+            seleccionada al angulo de disparo requerido.
+            Lo bueno de esta solicion es que puedo enviar en simultaneo, mismo
+            y único Timer, varios pulsos hacia el Triac.
+            Como contra se puede decir que consume mas recursos del MCU ya que
+            el timer entrara a la ISR muchísima mas veces ya que el timer se
+            desborda cada TIMER_INTERVAL, y esto es continuamente. Por este 
+            motivo dicha ISR deberá esta MUY BIEN OPTIMIZADA
+
 
 Calentadores
 ============
