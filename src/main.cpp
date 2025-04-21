@@ -3,9 +3,9 @@
 *     Reballing Machine
 *
 *     Autor: Tapia Velasquez Favio
-*     Version: 0.09.3
-*                   Posibilidad de seleccionar entre varios Perfiles guardados
-*                   Se dibuja el perfil seleccionado
+*     Version: 0.09.4
+*                   Implementación de un control multiple variando el Angulo de
+*                   disparo hacia el Triac
 *
 ******************************************************************************/
 
@@ -22,7 +22,7 @@
 #define accel               1 // para acelerar el tiempo, cuanto mas grande mas se acelera, un buen numero es 10
 
 #define WindowSize        200/accel
-#define WindowSize_cooler 200
+#define WindowSize_PID    200
 #define DELAY_TIME         10  // Retraso de la curva real a la del perfil
 unsigned long windowStartTime;
 unsigned long       startTime;
@@ -59,11 +59,11 @@ void setup() {
     #endif
 
     // Calentador
-    heaterPID.SetSampleTime(WindowSize);
+    heaterPID.SetSampleTime(WindowSize_PID);
     heaterPID.SetOutputLimits(HEATER_MIN_ANGLE, HEATER_MAX_ANGLE);
     heaterPID.SetMode(AUTOMATIC);
     // Extractor
-    coolerPID.SetSampleTime(WindowSize_cooler);
+    coolerPID.SetSampleTime(WindowSize_PID);
     coolerPID.SetOutputLimits(COOLER_MIN_ANGLE, COOLER_MAX_ANGLE); // para el angulo de disparo es 180-angulo
     coolerPID.SetMode(AUTOMATIC);
 
@@ -81,8 +81,6 @@ void setup() {
     }
     #endif
     /****************************** END OTA **********************************/
-
-    //printPresentation();
 
     /************************ SELECCIÓN DEL PERFIL A UTILIZAR ****************/
     // Busco los Perfiles disponibles y los inicializo
@@ -120,7 +118,6 @@ void setup() {
     //printSelectedProfile(myProfile.name, myProfile.time, myProfile.temperature, myProfile.length);
     /*************************************************************************/
 
-    //printLavels();
     printFrameBase(myProfile.time, myProfile.temperature, myProfile.length);
 
     // Inicializo los Timers que realizaran el pulso que activa el Triac 
@@ -149,6 +146,9 @@ void setup() {
     delayTime = 0;
     printProfileName(myProfile.name, ST7735_YELLOW);
 
+    encoder_setBasicParameters(0,MAXIMUN_ANGLE, false, 0, 10);
+    encoderValue = encoder_read();
+
     setPwmPulse(LOWER_HEATER, 0);
     setPwmPulse(EXTRACTOR, 0);
 }
@@ -158,7 +158,7 @@ void loop() {
     actualTime = millis();
     // Detectando el retardo del calentador
     if(myProfile.stageNumber_heatingMode==1){
-        if((uint16_t)Input1<=(uint16_t)ambTemperature){
+        if(Input1<=(uint16_t)ambTemperature*1.3){ // 30%
             delayTime = actualTime - startTime;
             //Serial.printf("DELAY: %2.3f\n\n", delayTime);
         }
@@ -184,12 +184,12 @@ void loop() {
             time_coolingMode = 0;
         }
 
-        // Trazado del perfil ideal
+        // Trazado del perfil Seleccionado
         if((uint16_t)time_heatingMode <= myProfile.time[myProfile.stageNumber_heatingMode] && myProfile.stageNumber_heatingMode < myProfile.length){
            heatingModeGraph = profile_getNextPointOnGraph(time_heatingMode, HEATING_MODE);
 
         }
-
+        // Trazado del perfil con retraso, debido a que el extractor reacciona mas rapido
         if((uint16_t)time_coolingMode <= myProfile.time[myProfile.stageNumber_coolingMode] && myProfile.stageNumber_coolingMode < myProfile.length){
            coolingModeGraph = profile_getNextPointOnGraph(time_coolingMode, COOLING_MODE);
 
@@ -202,15 +202,18 @@ void loop() {
         if(isPowerOn){ // En funcionamiento?
         /********************************** PID **********************************/
             // Toma Input se actúa. En la variable Output se guarda lo calculado
-            if(time_heatingMode<=myProfile.melting_point_time){
+            if(time_coolingMode<myProfile.melting_point_time){
                 Setpoint1 = heatingModeGraph;
                 heaterPID.Compute();
                 setPwmPulse(LOWER_HEATER, Output1);
             }
             else{
-                Setpoint1 = 0;
-                heaterPID.SetMode(MANUAL);
-                setPwmPulse(LOWER_HEATER, 0);
+                if(heaterPID.GetMode() != MANUAL){
+                    Setpoint1 = 0;
+                    heaterPID.SetMode(MANUAL);
+                    Output1 = 0;
+                    setPwmPulse(LOWER_HEATER, 0);
+                }
             }
             
             if(time_coolingMode>=myProfile.melting_point_time){
@@ -223,20 +226,17 @@ void loop() {
                 setPwmPulse(EXTRACTOR, Output2);
             }
             else{
-                Setpoint2 = 0;
-                coolerPID.SetMode(MANUAL);
-                setPwmPulse(EXTRACTOR, 0);
+                if(coolerPID.GetMode() != MANUAL){
+                    Setpoint2 = 0;
+                    coolerPID.SetMode(MANUAL);
+                    setPwmPulse(EXTRACTOR, 0);
+                }
             }
 
         /*************************************************************************/
     
         /***************************** CONTROL DE FASE ***************************/
             // Se envía pulso de habilitación del TRIAC
-            /*setPulse(Output1);
-            if(Output2 == COOLER_MIN_ANGLE){
-                Output2 = 0;
-            }
-            setPwmPulse(Output2);*/
             
             #ifdef ZC_INTERRUPT_FILTER
             // Filtro para detectar falsos Cruces por Cero
@@ -250,7 +250,7 @@ void loop() {
 
         #ifdef SERIAL_PLOTTER
         //Serial.printf("$%.2f %d %.2f;",(float)((actualTime-startTime)*accel/1000.0), (uint8_t)myProfile.stageNumber_heatingMode, (float)heatingModeGraph);
-        Serial.printf("$%d %d %d %d %d;\n",(uint16_t)Input1, (uint16_t)(Output1*50), (Output2-COOLER_MIN_ANGLE)<0?0:(uint16_t)(Output2-COOLER_MIN_ANGLE), (uint16_t)heatingModeGraph, (uint16_t)coolingModeGraph);
+        Serial.printf("$%d %d %d %d %d;\n",(uint16_t)Input1, (uint16_t)Output1, (Output2-COOLER_MIN_ANGLE)<0?0:(uint16_t)(Output2-COOLER_MIN_ANGLE), (uint16_t)heatingModeGraph, (uint16_t)coolingModeGraph);
         #endif
 
         windowStartTime = actualTime + WindowSize;
@@ -286,6 +286,12 @@ void loop() {
     }
     /*************************************************************************/
 
+    // Encoder
+    if(encoder_encoderChanged()){
+        encoderValue = encoder_read();
+    }
+    /*************************************************************************/
+
     actualTime = millis();
     if(actualTime>nextTime){  // Una vez por segundo
         // Actualizo el reloj
@@ -294,7 +300,6 @@ void loop() {
         printTime(clock_get_hours(), clock_get_minutes(), clock_get_seconds());
 
         if(oldInput1!=Input1 || oldInput2!=Input2){
-            //printInputs(Input1, Input2);
             printTemperatures(Input1, Input2);
 
             oldInput1 = Input1;
@@ -305,8 +310,6 @@ void loop() {
         printPoint((uint16_t)((actualTime-startTime)*accel/1000), (uint16_t)Input1);
         //printPoint(officialTime/1000, (uint16_t)Input1, ST7735_YELLOW, 1, 4);
 
-        //printOutputs(Output1, zcCounter);
-        //printActualSetpoint((uint16_t)stageNumber_heatingMode);
         printZcCount(zcCounter);
 
         /******* CHEQUEO DE CORRESPONDENCIA PULSOS ENVIADOS/RECIBIDOS ********/

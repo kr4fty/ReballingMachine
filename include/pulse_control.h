@@ -20,7 +20,7 @@
 
 #ifndef PULSE_CONTROL_H
 #define PULSE_CONTROL_H
- 
+
 #include "config.h"
 
 #define MAX_OUTPUTS 3 // Número máximo de salidas
@@ -40,28 +40,31 @@ volatile uint16_t  zcCounter=0;
 volatile bool isUp;
 volatile uint16_t totalPulsesSent=0;
 
+// Función en ensamblador para poner en alto un pin específico
+void writePinHigh(uint32_t pin) {
+    uint32_t mask = 1 << pin;
+    uint32_t *gpio_out = (uint32_t *)0x3FF44004; // Dirección del registro de salida GPIO
+    *gpio_out |= mask;
+}
+
+// Función en ensamblador para poner en bajo un pin específico
+void writePinLow(uint32_t pin) {
+    uint32_t mask = 1 << pin;
+    uint32_t *gpio_out = (uint32_t *)0x3FF44004; // Dirección del registro de salida GPIO
+    *gpio_out &= ~mask;
+
+    //POR AHORA LO VEO MAS FACTIBLE QUE ESTE AQUI, lo malo es que si estan habilidas las tres salidas, se le sumaran 3 veces los los pulsos
+    totalPulsesSent += 1;
+}
+
 void IRAM_ATTR zc_ISR() {
     // Reiniciar el contador de interrupciones del Timer
     currentInterruptCount = 0;
 
-    // Reiniciar los estados de las salidas
-    for (int i = 0; i < MAX_OUTPUTS; i++) {
-        switch (i)
-        {
-            case LOWER_HEATER:
-                digitalWrite(SALIDA_1, LOW); // Activar la salida 1
-                break;
-            case UPPER_HEATER:
-                digitalWrite(SALIDA_3, LOW); // Activar la salida 2
-                break;
-            case EXTRACTOR:
-                digitalWrite(SALIDA_2, LOW); // Activar la salida 3
-                break;
-        
-            default:
-                break;
-        }
-    }
+    // Forzamos a reiniciar los estados de las salidas
+    writePinLow(SALIDA_1);
+    writePinLow(SALIDA_3);
+    writePinLow(SALIDA_2);
 
     #ifdef ZC_INTERRUPT_FILTER    
     // Filtro para falsos positivos
@@ -79,44 +82,28 @@ void IRAM_ATTR Timer_ISR() {
     currentInterruptCount += 1;
 
     // Verificar si se debe activar alguna salida
-    for (int i = 0; i < MAX_OUTPUTS; i++) {
-        if(isItEnabled[i]){ // Esta habilitado la salida actual?
-            if (currentInterruptCount == outputAngles[i]) {
-                switch (i)
-                {
-                    case LOWER_HEATER:
-                        digitalWrite(SALIDA_1, HIGH); // Activar la salida 1
-                        break;
-                    case UPPER_HEATER:
-                        digitalWrite(SALIDA_3, HIGH); // Activar la salida 2
-                        break;
-                    case EXTRACTOR:
-                        digitalWrite(SALIDA_2, HIGH); // Activar la salida 3
-                        break;
-                
-                    default:
-                        break;
-                }
-            }
-            // Desactivar la salida después de G_PULSE_WIDTH
-            if (currentInterruptCount == outputAngles[i] + 1) { //<-- +1: sera el ancho G_PULSE_WIDTH 
-                switch (i)
-                {
-                    case LOWER_HEATER:
-                        digitalWrite(SALIDA_1, LOW); // Desactivar la salida 1
-                        break;
-                    case UPPER_HEATER:
-                        digitalWrite(SALIDA_3, LOW); // Desactivar la salida 2
-                        break;
-                    case EXTRACTOR:
-                        digitalWrite(SALIDA_2, LOW); // Desactivar la salida 3
-                        break;
-                
-                    default:
-                        break;
-                }
-                totalPulsesSent += 1;
-            }
+    if(isItEnabled[LOWER_HEATER]){
+        if(currentInterruptCount == outputAngles[LOWER_HEATER]){
+            writePinHigh(SALIDA_1);
+        }
+        if(currentInterruptCount == (outputAngles[LOWER_HEATER]+1)){
+            writePinLow(SALIDA_1);
+        }
+    }
+    if(isItEnabled[UPPER_HEATER]){
+        if(currentInterruptCount == outputAngles[UPPER_HEATER]){
+            writePinHigh(SALIDA_3);
+        }
+        if(currentInterruptCount == (outputAngles[UPPER_HEATER]+1)){
+            writePinLow(SALIDA_3);
+        }
+    }
+    if(isItEnabled[EXTRACTOR]){
+        if(currentInterruptCount == outputAngles[EXTRACTOR]){
+            writePinHigh(SALIDA_2);
+        }
+        if(currentInterruptCount == (outputAngles[EXTRACTOR]+1)){
+            writePinLow(SALIDA_2);
         }
     }
 }
@@ -144,14 +131,27 @@ void setPwmPulse(uint8_t outputIndex, double output) {
     if (outputIndex < MAX_OUTPUTS) {
         // Calcular el tiempo de activación basado en el ángulo de disparo
         if(output){ // distinto de 0
-            uint16_t pulseTime = map(output, 0, 180, 180, 10); // Lo pongo dentro de los limites 
+            /*  El area en el seno no varia linealmente con el angulo, este se 
+                parece mas a una tangente hiperbólica en lugar de ser una recta
+                con pendiente positiva.
+
+                Para calcular el area desde 0 a X1 del seno es: Area(x1)=1−cos(x1)
+                Luego x=arccos(1−p), con p= porcentaje que deseamos
+
+                Area_% = Area(x1)/Area(180) = (1 - cos(x1)) / (1 - cos(180)) = (1 - cos(x1)) / 2
+
+                angulo = acos(1 - Area_%) * (180.0 / PI), nos dará el angulo real para obtener la proporción de area deseada
+            */
+            double angle = acos(1-output/90.0)*(180.0/M_PI);
+
+            uint16_t pulseTime = map(angle, 0, 180, 180, 10); // Lo pongo dentro de los limites 
             outputAngles[outputIndex] = pulseTime*ESCALA; // Almacenar el tiempo para la salida correspondiente
 
             isItEnabled[outputIndex] = true; // Marcar la salida como habilitada
         }
         else { //output == 0
             // Se vio en el osc que ahi esta aproximadamente el centro del pulso de ZC
-            outputAngles[outputIndex] = 172; // CERO
+            //outputAngles[outputIndex] = 172; // CERO
             isItEnabled[outputIndex] = false; // Marco como deshabilitada para ocupar menos mcu en la ISR del timer
         }
 

@@ -57,7 +57,7 @@
 #define SERIAL_PLOTTER  1
 
 // Salida de control del Calefactor *******************************************
-#define SALIDA_1     4   // GPIO02 uso como ON/OFF, MOC3041
+#define SALIDA_1     4   // GPIO04 uso como ON/OFF, MOC3041
 #define SALIDA_2    17   // GPIO17 uso como PMW, MOC3021
 #define SALIDA_3    33   // por ahora no definido
 #define HEATER_PIN SALIDA_1
@@ -79,9 +79,9 @@
 // Grande OK        Kp= 0.95, Ki= 0.0064518, Kd= 17.5494
 
 // Calefactor, control por pulsos ON/OFF
-#define KP_HEATER       0.95
-#define KI_HEATER  0.0064518
-#define KD_HEATER    17.5494
+#define KP_HEATER          3
+#define KI_HEATER      0.004
+#define KD_HEATER          1
 #define HEATER_MIN_ANGLE   0
 #define HEATER_MAX_ANGLE 180
 
