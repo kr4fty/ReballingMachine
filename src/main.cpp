@@ -61,11 +61,11 @@ void setup() {
     // Calentador
     heaterPID.SetSampleTime(WindowSize_PID);
     heaterPID.SetOutputLimits(HEATER_MIN_ANGLE, HEATER_MAX_ANGLE);
-    heaterPID.SetMode(AUTOMATIC);
+    //heaterPID.SetMode(AUTOMATIC);
     // Extractor
     coolerPID.SetSampleTime(WindowSize_PID);
     coolerPID.SetOutputLimits(COOLER_MIN_ANGLE, COOLER_MAX_ANGLE); // para el angulo de disparo es 180-angulo
-    coolerPID.SetMode(AUTOMATIC);
+    //coolerPID.SetMode(AUTOMATIC);
 
     // Use this initializer if using a 1.8" TFT screen:
     initDisplay();
@@ -158,7 +158,7 @@ void loop() {
     actualTime = millis();
     // Detectando el retardo del calentador
     if(myProfile.stageNumber_heatingMode==1){
-        if(Input1<=(uint16_t)ambTemperature*1.3){ // 30%
+        if(Input1<=(uint16_t)(ambTemperature+3)){ // +3º
             delayTime = actualTime - startTime;
             //Serial.printf("DELAY: %2.3f\n\n", delayTime);
         }
@@ -203,33 +203,37 @@ void loop() {
         /********************************** PID **********************************/
             // Toma Input se actúa. En la variable Output se guarda lo calculado
             if(time_coolingMode<myProfile.melting_point_time){
+                if(heaterPID.GetMode() != AUTOMATIC){
+                    heaterPID.SetMode(AUTOMATIC);
+                }
                 Setpoint1 = heatingModeGraph;
                 heaterPID.Compute();
                 setPwmPulse(LOWER_HEATER, Output1);
-            }
-            else{
-                if(heaterPID.GetMode() != MANUAL){
-                    Setpoint1 = 0;
-                    heaterPID.SetMode(MANUAL);
-                    Output1 = 0;
-                    setPwmPulse(LOWER_HEATER, 0);
+                
+                // Deshabilito el Extractor
+                if(coolerPID.GetMode() != MANUAL){ // Para que solo acute una vez
+                    Setpoint2 = 0;
+                    coolerPID.SetMode(MANUAL);
+                    setPwmPulse(EXTRACTOR, 0);
                 }
             }
-            
-            if(time_coolingMode>=myProfile.melting_point_time){
-                coolerPID.SetMode(AUTOMATIC);
+            else{
+                if(coolerPID.GetMode() != AUTOMATIC){
+                    coolerPID.SetMode(AUTOMATIC);
+                }
                 Setpoint2 = coolingModeGraph;
                 coolerPID.Compute();
                 if(Output2 == COOLER_MIN_ANGLE){
                     Output2 = 0;
                 }
                 setPwmPulse(EXTRACTOR, Output2);
-            }
-            else{
-                if(coolerPID.GetMode() != MANUAL){
-                    Setpoint2 = 0;
-                    coolerPID.SetMode(MANUAL);
-                    setPwmPulse(EXTRACTOR, 0);
+                
+                // Desabilito el calentador
+                if(heaterPID.GetMode() != MANUAL){ // Para que solo acute una vez
+                    Setpoint1 = 0;
+                    heaterPID.SetMode(MANUAL);
+                    Output1 = 0;
+                    setPwmPulse(LOWER_HEATER, 0);
                 }
             }
 
