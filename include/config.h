@@ -12,9 +12,9 @@
 *                --| GPIO33        GPIO19 |--  TH1_DO / TH2_DO
 * ENCODER_PIN_A  --| GPIO25        GPIO18 |--  TH1_CLK / TH2_CLK / TFT_SCL
 * ENCODER_PIN_B  --| GPIO26        GPIO05 |--  TFT_CS
-*                --| GPIO27        GPIO17 |--  RELAY_PIN
+*        BUTTON  --| GPIO27        GPIO17 |--  COOLER_PIN
 *                --| GPIO14        GPIO16 |--  TH1_CS
-*                --| GPIO12        GPIO04 |--  BUTTON
+*                --| GPIO12        GPIO04 |--  HEATER_PIN
 *                --| VBATT         GPIO00 |--
 *                --| GPIO13        GPIO02 |--
 *                --| GPIO09        GPIO15 |--  TFT_RST

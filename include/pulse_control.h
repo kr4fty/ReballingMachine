@@ -25,7 +25,7 @@
 
 #define MAX_OUTPUTS 3 // Número máximo de salidas
 
-#define TIMER_FREQUENCY 1800000 // 1 MHz
+#define TIMER_FREQUENCY 1800000 // 1.8 MHz
 #define INTERRUPT_FREQUENCY 100 // 100 Hz
 #define MAXIMUN_ANGLE       180 // 180º
 #define ESCALA                1 // Mas grande para mayor resolución, por lo que el ancho del PULSO G sera mas delgado, pero mas uso del mcu

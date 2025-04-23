@@ -201,7 +201,7 @@ void loop() {
 
         if(isPowerOn){ // En funcionamiento?
         /********************************** PID **********************************/
-            // Toma Input se actúa. En la variable Output se guarda lo calculado
+            // Toma Input y se actúa. En Output se guarda el valor calculado
             if(time_coolingMode<myProfile.melting_point_time){
                 if(heaterPID.GetMode() != AUTOMATIC){
                     heaterPID.SetMode(AUTOMATIC);
