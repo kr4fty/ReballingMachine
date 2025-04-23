@@ -19,35 +19,39 @@
 #include "my_profiles.h"
 #include "tclock.h"
 
-#define accel               1 // para acelerar el tiempo, cuanto mas grande mas se acelera, un buen numero es 10
-
-#define WindowSize        200/accel
+#define WindowSize        200
 #define WindowSize_PID    200
 #define DELAY_TIME         10  // Retraso de la curva real a la del perfil
+
+bool                isPowerOn; // True: Control PID en funcionamiento
+
 unsigned long windowStartTime;
 unsigned long       startTime;
 unsigned long        nextTime;
 unsigned long      actualTime;
 unsigned long       delayTime;
-unsigned long    maxTemp_time; // tiempo en el que la Temperatura es Máxima
 unsigned long    officialTime; // Tiempo lineal de funcionamiento, sin interrupciones
-
-bool isPowerOn;
-unsigned long encoderValue;
+unsigned long    encoderValue;
 unsigned long oldEncoderValue;
 
-double Setpoint1, Input1, Output1;
-double Setpoint2, Input2, Output2;
+double              Setpoint1;
+double                 Input1;
+double                Output1;
+double              Setpoint2;
+double                 Input2;
+double                Output2;
+
+double       heatingModeGraph;
+double       coolingModeGraph;
+double       time_heatingMode;
+double       time_coolingMode;
+
+uint8_t    modoFuncionamiento; //1: modo Calefacción, 2: modo en espera, 3: modo Ventilación
+
+double     ambientTemperature;
+                      
 PID heaterPID = PID(&Input1, &Output1, &Setpoint1, KP_HEATER, KI_HEATER, KD_HEATER, DIRECT);
 PID coolerPID = PID(&Input2, &Output2, &Setpoint2, KP_COOLER, KI_COOLER, KD_COOLER, REVERSE);
-
-double heatingModeGraph, coolingModeGraph;
-double time_heatingMode;
-double time_coolingMode;
-
-uint8_t modoFuncionamiento; //1: modo Calefacción, 2: modo en espera, 3: modo Ventilación
-
-double ambTemperature;
  
 // the setup function runs once when you press reset or power the board
 void setup() {
@@ -61,16 +65,14 @@ void setup() {
     // Calentador
     heaterPID.SetSampleTime(WindowSize_PID);
     heaterPID.SetOutputLimits(HEATER_MIN_ANGLE, HEATER_MAX_ANGLE);
-    //heaterPID.SetMode(AUTOMATIC);
     // Extractor
     coolerPID.SetSampleTime(WindowSize_PID);
     coolerPID.SetOutputLimits(COOLER_MIN_ANGLE, COOLER_MAX_ANGLE); // para el angulo de disparo es 180-angulo
-    //coolerPID.SetMode(AUTOMATIC);
 
-    // Use this initializer if using a 1.8" TFT screen:
+    // Inicializamos el LCD
     initDisplay();
 
-    // Encoder
+    // Inicializamos el Encoder
     encoder_init();
 
     /********************************* OTA ***********************************/
@@ -118,6 +120,7 @@ void setup() {
     //printSelectedProfile(myProfile.name, myProfile.time, myProfile.temperature, myProfile.length);
     /*************************************************************************/
 
+    // Imprimo valores estáticos de la pantalla
     printFrameBase(myProfile.time, myProfile.temperature, myProfile.length);
 
     // Inicializo los Timers que realizaran el pulso que activa el Triac 
@@ -133,7 +136,7 @@ void setup() {
     modoFuncionamiento = HEATING_MODE;
 
     // Guardo la temperatura en el ambiente
-    ambTemperature = Input1;
+    ambientTemperature = Input1;
     
     #ifdef DEBUG
     Serial.printf("Ingresando al Modo Calentamiento\n");
@@ -142,8 +145,8 @@ void setup() {
 
     windowStartTime = actualTime;
     isPowerOn = true;
+
     printSystemStatus(isPowerOn);
-    delayTime = 0;
     printProfileName(myProfile.name, ST7735_YELLOW);
 
     encoder_setBasicParameters(0,MAXIMUN_ANGLE, false, 0, 10);
@@ -158,7 +161,7 @@ void loop() {
     actualTime = millis();
     // Detectando el retardo del calentador
     if(myProfile.stageNumber_heatingMode==1){
-        if(Input1<=(uint16_t)(ambTemperature+3)){ // +3º
+        if(Input1<=(uint16_t)(ambientTemperature+3)){ // +3º
             delayTime = actualTime - startTime;
             //Serial.printf("DELAY: %2.3f\n\n", delayTime);
         }
@@ -178,8 +181,8 @@ void loop() {
         // Perfil térmico *****************************************************
         officialTime = actualTime - startTime;
         
-        time_heatingMode =((officialTime)*accel/1000.0);
-        time_coolingMode =(officialTime-delayTime)*accel/1000.0;
+        time_heatingMode =((officialTime)/1000.0);
+        time_coolingMode =(officialTime-delayTime)/1000.0;
         if(time_coolingMode<0){
             time_coolingMode = 0;
         }
@@ -194,8 +197,6 @@ void loop() {
            coolingModeGraph = profile_getNextPointOnGraph(time_coolingMode, COOLING_MODE);
 
         }
-
-
 
         //*********************************************************************
 
@@ -253,7 +254,6 @@ void loop() {
         }
 
         #ifdef SERIAL_PLOTTER
-        //Serial.printf("$%.2f %d %.2f;",(float)((actualTime-startTime)*accel/1000.0), (uint8_t)myProfile.stageNumber_heatingMode, (float)heatingModeGraph);
         Serial.printf("$%d %d %d %d %d;\n",(uint16_t)Input1, (uint16_t)Output1, (Output2-COOLER_MIN_ANGLE)<0?0:(uint16_t)(Output2-COOLER_MIN_ANGLE), (uint16_t)heatingModeGraph, (uint16_t)coolingModeGraph);
         #endif
 
@@ -272,7 +272,6 @@ void loop() {
                 heaterPID.SetMode(MANUAL);
                 stopZcInterrupt(); // Desactivo interrupciones de cruce por cero
                 coolerPID.SetMode(MANUAL);
-                //setPulse(LOW);
             }
             else{ // ENCENDIDO
                 startZcInterrupt(); // Activo interrupciones de cruce por cero
@@ -311,7 +310,7 @@ void loop() {
         }
 
         // Voy gráficando la evolución de la temperatura con el tiempo
-        printPoint((uint16_t)((actualTime-startTime)*accel/1000), (uint16_t)Input1);
+        printPoint((uint16_t)((actualTime-startTime)/1000), (uint16_t)Input1);
         //printPoint(officialTime/1000, (uint16_t)Input1, ST7735_YELLOW, 1, 4);
 
         printZcCount(zcCounter);
@@ -323,13 +322,11 @@ void loop() {
 
         // DEBUG
         #ifdef SERIAL_PLOTTER
-        unsigned long Time = (actualTime-startTime)*accel/1000.0;
-        //Serial.printf("$%.2f %.2f %d %.2f;",Input1, Input2, stageNumber_heatingMode, heatingModeGraph);
-        //Serial.printf("$%.2f %d %.2f;",(float)((actualTime-startTime)*accel/1000.0), (uint8_t)stageNumber_heatingMode, (float)heatingModeGraph);
-        //Serial.printf("$%d %d %d %d %d;\n",(uint16_t)Input1, (uint16_t)(Output1*50), (Output2-COOLER_MIN_ANGLE)<0?0:(uint16_t)(Output2-COOLER_MIN_ANGLE), (uint16_t)heatingModeGraph, (uint16_t)coolingModeGraph);
+        //unsigned long Time = (actualTime-startTime)/1000.0;
+        //Serial.printf("$%d %d %d %d %d;\n",(uint16_t)Input1, (uint16_t)Output1, (Output2-COOLER_MIN_ANGLE)<0?0:(uint16_t)(Output2-COOLER_MIN_ANGLE), (uint16_t)heatingModeGraph, (uint16_t)coolingModeGraph);
         #endif
 
         zcCounter=0;
-        nextTime=millis() + WINDOW_1Seg/accel;
+        nextTime=millis() + WINDOW_1Seg;
     }
 }
