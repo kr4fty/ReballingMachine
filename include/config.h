@@ -78,14 +78,14 @@
 // Pequeño OK       Kp= 0.5, Ki= 0.0038989, Kd= 9.2996
 // Grande OK        Kp= 0.95, Ki= 0.0064518, Kd= 17.5494
 
-// Calefactor, control por pulsos ON/OFF
+// Calefactor
 #define KP_HEATER          3
 #define KI_HEATER      0.004
 #define KD_HEATER          1
 #define HEATER_MIN_ANGLE   0
 #define HEATER_MAX_ANGLE 180
 
-// Extractor de calor Inferior, control PWM
+// Extractor de calor Inferior
 #define KP_COOLER        2.5
 #define KI_COOLER     0.0125
 #define KD_COOLER       1.00
