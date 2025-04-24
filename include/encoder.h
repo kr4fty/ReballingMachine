@@ -61,10 +61,10 @@ long encoder_encoderChanged()
 
 /********************************* BOTON *************************************/
 enum ClickType {
-    NO_CLICK,       // No hay pulsacion
-    SHORT_CLICK,    // Pulsacion corta
-    LONG_CLICK,     // Pulsacion larga
-    DOUBLE_CLICK    // Doble pulsacion
+    NO_CLICK,       // No hay pulsación
+    SHORT_CLICK,    // Pulsación corta
+    LONG_CLICK,     // Pulsación larga
+    DOUBLE_CLICK    // Doble pulsación
 };
 
 bool wasButtonDown    = false; // se presiono el botón
@@ -115,14 +115,14 @@ uint8_t isButtonClicked()
                     longClickDetected = true;
                     //Serial.printf("Pulsacion Larga, Duracion: %d, Key:%d\n", timeDiff, key);
                 } 
-                // se ha detectado una pulsacion larga, por lo que no tiene sentido ahora preguntar por pulsacion corta
+                // se ha detectado una pulsación larga, por lo que no tiene sentido ahora preguntar por pulsación corta
                 return key;
             }
         }
     }
     // Boton liberado, se hizo click
     else{
-        if(longClickDetected){ // Si hubo una pulsacion larga, reseteo valores para ignorar el click al soltar el boton
+        if(longClickDetected){ // Si hubo una pulsación larga, reseteo valores para ignorar el click al soltar el botón
             longClickDetected = false;
             wasButtonDown = false;
         }
@@ -132,22 +132,22 @@ uint8_t isButtonClicked()
             //Serial.printf("Clicks = %d Time: %d ", _clickCounter, timeDiff);
             wasButtonDown = false;
 
-            if (timeDiff > shortPressAfterMiliseconds){ // Se detecto pulsacion corta
+            if (timeDiff > shortPressAfterMiliseconds){ // Se detecto pulsación corta
                 //Serial.printf("\n");
-            } else { // Se detecto pulsacion corta y rapida. Posible intento de doble click?
+            } else { // Se detecto pulsación corta y rápida. Posible intento de doble click?
                 checkDoubleClick = true;
                 //Serial.printf("Fast click\n");
             }
         }
     }
-    // Pasado un tiempo maxTimeBetween2Events, veo si fue un click corto o un doble click rapido
+    // Pasado un tiempo maxTimeBetween2Events, veo si fue un click corto o un doble click rápido
     if(timeDiff>maxTimeBetween2Events && _clickCounter){
-        if(_clickCounter==1){ // Solo se detecto una pulsacion, entonces es una pulsacion corta
+        if(_clickCounter==1){ // Solo se detecto una pulsación, entonces es una pulsación corta
             key = SHORT_CLICK;
             //Serial.printf("Pulsacion Corta\n");
 
         }
-        else if(_clickCounter>1){ // Se detecto varias pulsaciones, entonces es un doble click (podria haber 3 o mas :P)
+        else if(_clickCounter>1){ // Se detecto varias pulsaciones, entonces es un doble click (podría haber 3 o mas :P)
             if(checkDoubleClick){
                 key = DOUBLE_CLICK;
                 //Serial.printf("Doble Pulsacion\n");

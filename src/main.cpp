@@ -21,7 +21,6 @@
 
 #define WindowSize        200
 #define WindowSize_PID    200
-#define DELAY_TIME         10  // Retraso de la curva real a la del perfil
 
 bool                isPowerOn; // True: Control PID en funcionamiento
 

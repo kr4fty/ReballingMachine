@@ -36,7 +36,7 @@ Librería PID
 Librería AiEsp32RotaryEncoder.h
 ===============================
 Librería para el control de un encoder y un botón
-    https://github.com/igorantolic/ai-esp32-rotary-encoder
+    https://github.com/kr4fty/ai-rotary-encoder
 
 Librería ElegantOTA.h
 =====================
@@ -140,7 +140,7 @@ Calentadores
 TIMER y PWM:
 ============
     Problema:
-        Se había implementado mediante el Timer1 y Timer2 una reimplementacion
+        Se había implementado mediante el Timer1 y Timer2 una reimplementación
         de un PWM, pero adaptado para nuestro uso. Su función era la siguiente:
           Espero por la llega de un cruce por cero y de acuerdo con el dutty
           seleccionado, envió un pulso (HIGH), esto medido con el timer1. Luego
